@@ -2180,6 +2180,7 @@ class FileDiff(Gtk.Box, MeldDoc):
                 return False
             bufdata.label = gfile.get_path()
             bufdata.gfile = gfile
+            bufdata.encoding = encoding
             bufdata.savefile = None
             self.filelabel[pane].props.gfile = gfile
 
@@ -2205,7 +2206,7 @@ class FileDiff(Gtk.Box, MeldDoc):
 
         saver = GtkSource.FileSaver.new_with_target(
             self.textbuffer[pane], bufdata.sourcefile, bufdata.gfiletarget)
-        saver.set_encoding(encoding)
+        saver.set_encoding(bufdata.encoding)
         # TODO: Think about removing this flag and above handling, and instead
         # handling the GtkSource.FileSaverError.EXTERNALLY_MODIFIED error
         if force_overwrite:
