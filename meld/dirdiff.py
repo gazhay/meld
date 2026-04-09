@@ -58,13 +58,13 @@ if typing.TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class StatItem(namedtuple('StatItem', 'mode size time')):
+class StatItem(namedtuple('StatItem', 'mode size time permission_oct')):
     __slots__ = ()
 
     @classmethod
     def _make(cls, stat_result):
         return StatItem(stat.S_IFMT(stat_result.st_mode),
-                        stat_result.st_size, stat_result.st_mtime)
+                        stat_result.st_size, stat_result.st_mtime, oct(stat.S_IMODE(stat_result.st_mode)) )
 
     def shallow_equal(self, other: "StatItem", time_resolution_ns: int) -> bool:
         if self.size != other.size:
@@ -186,6 +186,10 @@ def _files_same(files, regexes, comparison_args):
     need_contents = ignore_blank_lines or apply_text_filters
 
     regexes = tuple(regexes) if apply_text_filters else ()
+
+    # Check for permissions
+    if not all_same([s.permission_oct for s in stats]):
+        return Different
 
     # If all entries are directories, they are considered to be the same
     if all([stat.S_ISDIR(s.mode) for s in stats]):
