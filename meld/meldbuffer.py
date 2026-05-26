@@ -60,22 +60,6 @@ class MeldBuffer(GtkSource.Buffer):
             return self.get_end_iter()
         return self.get_iter_at_line(line)
 
-    def insert_at_line(self, line, text):
-        """Insert text at the given line, or the end of the buffer.
-
-        This method is like insert, but if asked to insert something past the
-        last line in the buffer, this will insert at the end, and will add a
-        linebreak before the inserted text. The last line in a Gtk.TextBuffer
-        is guaranteed never to have a newline, so we need to handle this.
-        """
-        if line >= self.get_line_count():
-            # TODO: We need to insert a linebreak here, but there is no
-            # way to be certain what kind of linebreak to use.
-            text = "\n" + text
-        it = self.get_iter_at_line_or_eof(line)
-        self.insert(it, text)
-        return it
-
 
 class MeldBufferState(enum.Enum):
     EMPTY = "EMPTY"

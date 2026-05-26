@@ -36,6 +36,14 @@ class MatcherWorker(multiprocessing.Process):
                 log.error("Exception while running diff: %s", e)
             time.sleep(0)
 
+    def quick_run(self, text1, textn):
+        try:
+            matcher = self.matcher_class(None, text1, textn)
+            return matcher.get_opcodes()
+        except Exception as e:
+            log.error("Exception while running diff: %s", e)
+            return []
+
 
 class CachedSequenceMatcher:
     """Simple class for caching diff results, with LRU-based eviction
@@ -99,6 +107,15 @@ class CachedSequenceMatcher:
             GLib.idle_add(lambda: cb(opcodes))
         except KeyError:
             GLib.idle_add(lambda: self.enqueue_task(texts, cb))
+
+    def quick_match(self, text1, textn, cb):
+        texts = (text1, textn)
+        # don't update the cache, we're about to change this text
+        try:
+            opcodes = self.cache[texts][0]
+        except KeyError:
+            opcodes = self.thread.quick_run(text1, textn)
+        return cb(opcodes)
 
     def enqueue_task(self, texts, cb):
         if not bool(self.queued_matches):

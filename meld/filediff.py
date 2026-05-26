@@ -510,6 +510,16 @@ class FileDiff(Gtk.Box, MeldDoc):
             t.line_renderer = renderer
 
         self.connect("notify::ignore-blank-lines", self.refresh_comparison)
+        inline_tags = [b.get_tag_table().lookup("inline") for b in
+                       self.textbuffer]
+        clickable_tags = [b.get_tag_table().lookup("inline-clickable") for b in
+                          self.textbuffer]
+        for pane, tag in enumerate(inline_tags):
+            tag.connect("event", self.inline_tag_event, pane)
+        for pane, tag in enumerate(clickable_tags):
+            tag.connect("event", self.clickable_tag_event, pane)
+        self.clickable = None
+        self.replaceable = None
 
     def do_realize(self):
         Gtk.Box().do_realize(self)
@@ -538,6 +548,15 @@ class FileDiff(Gtk.Box, MeldDoc):
 
     @Gtk.Template.Callback()
     def on_key_event(self, object, event):
+        def change_cursor(cursor_name):
+            for v in self.textview:
+                window = Gtk.Widget.get_window(v)
+                if window is not None:
+                    cursor = Gdk.Cursor.new_from_name(
+                        Gdk.Display.get_default(), cursor_name)
+                    w = window.get_children()[0].get_children()[0]
+                    Gdk.Window.set_cursor(w, cursor)
+
         keymap = Gdk.Keymap.get_default()
         ok, keyval, group, lvl, consumed = keymap.translate_keyboard_state(
             event.hardware_keycode, 0, event.group)
@@ -546,8 +565,64 @@ class FileDiff(Gtk.Box, MeldDoc):
             self.keymask |= mod_key
             if event.keyval == Gdk.KEY_Escape:
                 self.findbar.hide()
+            if mod_key & MASK_CTRL:
+                if self.clickable is not None:
+                    self.apply_clickable_text(self.clickable['tag'],
+                                              self.clickable['begin'],
+                                              self.clickable['end'],
+                                              self.clickable['window'],
+                                              self.clickable['pane'])
+                    change_cursor("pointer")
+                else:
+                    change_cursor("default")
         elif event.type == Gdk.EventType.KEY_RELEASE:
             self.keymask &= ~mod_key
+            if mod_key & MASK_CTRL:
+                if self.clickable is not None:
+                    self.unapply_clickable_tag()
+                change_cursor("text")
+
+    def inline_tag_event(self, texttag, widget, event, iter, pane):
+        if event.type != Gdk.EventType.MOTION_NOTIFY:
+            return
+        begin_tag, end_tag = self.get_tag_bounds(texttag, iter)
+        if self.clickable is None and self.keymask & MASK_CTRL:
+            cursor = Gdk.Cursor.new_from_name(Gdk.Display.get_default(),
+                                              "pointer")
+            Gdk.Window.set_cursor(event.window, cursor)
+            self.apply_clickable_text(texttag, begin_tag, end_tag,
+                                      event.window, pane)
+        self.clickable = {
+            'tag': texttag,
+            'begin': begin_tag,
+            'end': end_tag,
+            'window': event.window,
+            'pane': pane,
+            'x': event.x,
+            'y': event.y
+        }
+
+    def clickable_tag_event(self, texttag, widget, event, iter, pane):
+        if event.type == Gdk.EventType.MOTION_NOTIFY:
+            self.clickable['x'] = event.x
+            self.clickable['y'] = event.y
+        elif (event.type == Gdk.EventType.BUTTON_PRESS and
+              event.button.button == 1):
+            begin_tag, end_tag = self.get_tag_bounds(texttag, iter)
+            self.unapply_clickable_tag()
+            self.clickable = None
+            if self.action_mode == ActionMode.Delete:
+                self.replace_text("", pane, begin_tag, end_tag)
+            else:
+                self.replace_match(pane, begin_tag, end_tag)
+
+    def get_tag_bounds(self, texttag, iter):
+        if not iter.begins_tag(texttag):
+            iter.backward_to_tag_toggle(texttag)
+        begin_tag = iter.copy()
+        iter.forward_to_tag_toggle(texttag)
+        end_tag = iter
+        return begin_tag, end_tag
 
     def on_overview_map_style_changed(self, *args):
         style = self.props.overview_map_style
@@ -1163,6 +1238,24 @@ class FileDiff(Gtk.Box, MeldDoc):
         self.keymask = 0
         self._set_merge_action_sensitivity()
         self._set_external_action_sensitivity()
+
+    @Gtk.Template.Callback()
+    def on_textview_leave_notify_event(self, view, event):
+        if self.clickable:
+            self.unapply_clickable_tag()
+            self.clickable = None
+
+    @Gtk.Template.Callback()
+    def on_textview_motion_notify_event(self, view, event):
+        if self.clickable is None or \
+           event.x > self.clickable['x'] - 1 and \
+           event.x < self.clickable['x'] + 1 and \
+           event.y > self.clickable['y'] - 1 and \
+           event.y < self.clickable['y'] + 1:
+            return
+        if self.keymask & MASK_CTRL:
+            self.unapply_clickable_tag()
+        self.clickable = None
 
     def _after_text_modified(self, buf, startline, sizechange):
         if self.num_panes > 1:
@@ -2562,6 +2655,58 @@ class FileDiff(Gtk.Box, MeldDoc):
         buffer.paste_clipboard(clipboard, None, view.get_editable())
         view.scroll_to_mark(buffer.get_insert(), 0.1, False, 0, 0)
 
+    def apply_clickable_text(self, tag, begin, end, window, pane):
+        self.apply_tag_to_text("inline", "inline-clickable",
+                               begin, end, pane)
+        self.replaceable = {p: self.get_match_tag(pane, p, begin, end)
+                            for p in self.get_adjacent_panes(pane)}
+        for p in self.replaceable:
+            mtag = self.replaceable[p]
+            self.apply_replaceable_text(mtag[0], mtag[1], p)
+
+    def apply_replaceable_text(self, begin, end, pane):
+        self.apply_tag_to_text("inline", "inline-replaceable",
+                               begin, end, pane)
+
+    def apply_tag_to_text(self, oldtag_name, newtag_name, begin, end, pane):
+        b = self.textbuffer[pane]
+        oldtag = b.get_tag_table().lookup(oldtag_name)
+        newtag = b.get_tag_table().lookup(newtag_name)
+        b.remove_tag(oldtag, begin, end)
+        b.apply_tag(newtag, begin, end)
+
+    def unapply_clickable_tag(self):
+        self.apply_tag_to_text("inline-clickable", "inline",
+                               self.clickable['begin'],
+                               self.clickable['end'],
+                               self.clickable['pane'])
+        if self.replaceable is not None:
+            for p in self.replaceable:
+                mtag = self.replaceable[p]
+                self.apply_tag_to_text("inline-replaceable", "inline",
+                                       mtag[0], mtag[1], p)
+            self.replaceable = None
+        cursor = Gdk.Cursor.new_from_name(Gdk.Display.get_default(), "default")
+        Gdk.Window.set_cursor(self.clickable['window'], cursor)
+
+    def replace_text(self, src_text, dst, dst_start, dst_end):
+        b = self.textbuffer[dst]
+        mark0 = b.create_mark(None, dst_start, True)
+        b.begin_user_action()
+        b.delete(dst_start, dst_end)
+        dst_start_offset = dst_start.get_offset()
+        b.insert(dst_start, src_text)
+        new_end = dst_start  # updated by insert()
+        b.place_cursor(b.get_iter_at_offset(dst_start_offset))
+        b.end_user_action()
+        mark1 = b.create_mark(None, new_end, True)
+        if len(src_text) == 0:
+            # TODO: Need a more specific colour here; conflict is wrong
+            colour = 'conflict'
+        else:
+            colour = 'insert'
+        self.textview[dst].add_fading_highlight(mark0, mark1, colour, 500000)
+
     def copy_chunk(self, src, dst, chunk, copy_up):
         b0, b1 = self.textbuffer[src], self.textbuffer[dst]
         start = b0.get_iter_at_line_or_eof(chunk.start_a)
@@ -2575,17 +2720,13 @@ class FileDiff(Gtk.Box, MeldDoc):
                 # way to be certain what kind of linebreak to use.
                 t0 = t0 + "\n"
             dst_start = b1.get_iter_at_line_or_eof(chunk.start_b)
-            mark0 = b1.create_mark(None, dst_start, True)
-            new_end = b1.insert_at_line(chunk.start_b, t0)
         else:
+            if chunk.end_b >= b1.get_line_count():
+                # TODO: We need to insert a linebreak here, but there is no
+                # way to be certain what kind of linebreak to use.
+                t0 = "\n" + t0
             dst_start = b1.get_iter_at_line_or_eof(chunk.end_b)
-            mark0 = b1.create_mark(None, dst_start, True)
-            new_end = b1.insert_at_line(chunk.end_b, t0)
-
-        mark1 = b1.create_mark(None, new_end, True)
-        # FIXME: If the inserted chunk ends up being an insert chunk, then
-        # this animation is not visible; this happens often in three-way diffs
-        self.textview[dst].add_fading_highlight(mark0, mark1, 'insert', 500000)
+        self.replace_text(t0, dst, dst_start, dst_start)
 
     def replace_chunk(self, src, dst, chunk):
         b0, b1 = self.textbuffer[src], self.textbuffer[dst]
@@ -2594,36 +2735,65 @@ class FileDiff(Gtk.Box, MeldDoc):
         dst_start = b1.get_iter_at_line_or_eof(chunk.start_b)
         dst_end = b1.get_iter_at_line_or_eof(chunk.end_b)
         t0 = b0.get_text(src_start, src_end, False)
-        mark0 = b1.create_mark(None, dst_start, True)
-        b1.begin_user_action()
-        b1.delete(dst_start, dst_end)
-        new_end = b1.insert_at_line(chunk.start_b, t0)
-        b1.place_cursor(b1.get_iter_at_line(chunk.start_b))
-        b1.end_user_action()
-        mark1 = b1.create_mark(None, new_end, True)
-        if chunk.start_a == chunk.end_a:
-            # TODO: Need a more specific colour here; conflict is wrong
-            colour = 'conflict'
-        else:
-            # FIXME: If the inserted chunk ends up being an insert chunk, then
-            # this animation is not visible; this happens often in three-way
-            # diffs
-            colour = 'insert'
-        self.textview[dst].add_fading_highlight(mark0, mark1, colour, 500000)
+        if chunk.end_b >= b1.get_line_count():
+            # TODO: We need to insert a linebreak here, but there is no
+            # way to be certain what kind of linebreak to use.
+            t0 = "\n" + t0
+        self.replace_text(t0, dst, dst_start, dst_end)
 
     def delete_chunk(self, src, chunk):
         b0 = self.textbuffer[src]
-        it = b0.get_iter_at_line_or_eof(chunk.start_a)
+        start = b0.get_iter_at_line_or_eof(chunk.start_a)
+        end = b0.get_iter_at_line_or_eof(chunk.end_a)
         if chunk.end_a >= b0.get_line_count():
             # If this is the end of the buffer, we need to remove the
             # previous newline, because the current line has none.
-            it.backward_cursor_position()
-        b0.delete(it, b0.get_iter_at_line_or_eof(chunk.end_a))
-        mark0 = b0.create_mark(None, it, True)
-        mark1 = b0.create_mark(None, it, True)
-        # TODO: Need a more specific colour here; conflict is wrong
-        self.textview[src].add_fading_highlight(
-            mark0, mark1, 'conflict', 500000)
+            start.backward_cursor_position()
+        self.replace_text("", src, start, end)
+
+    def get_match_tag(self, src, dst, begin_tag, end_tag):
+        line = begin_tag.get_line()
+        chunk_index = self.linediffer.locate_chunk(src, line)[0]
+        if chunk_index is None:
+            return
+        chunk = self.linediffer.get_chunk(chunk_index, src, dst)
+        if chunk is None:
+            return
+        b0, b1 = self.textbuffer[src], self.textbuffer[dst]
+        src_start = b0.get_iter_at_line_or_eof(chunk.start_a)
+        dst_start = b1.get_iter_at_line_or_eof(chunk.start_b)
+        src_end = b0.get_iter_at_line_or_eof(chunk.end_a)
+        dst_end = b1.get_iter_at_line_or_eof(chunk.end_b)
+        src_offset = src_start.get_offset()
+        dst_offset = dst_start.get_offset()
+        begin_tag_offset = begin_tag.get_offset() - src_offset
+        end_tag_offset = end_tag.get_offset() - src_offset
+        text1 = b0.get_text(src_start, src_end, False)
+        textn = b1.get_text(dst_start, dst_end, False)
+
+        def get_match_tag_cb(b, begin_tag, end_tag, offset, matches):
+            ops = [match for match in matches if match.tag != "equal" and
+                   begin_tag <= match.start_a and match.end_a <= end_tag]
+            ops_start = min([op.start_b for op in ops])
+            ops_end = max([op.end_b for op in ops])
+            dst_start = b.get_iter_at_offset(offset + ops_start)
+            dst_end = b.get_iter_at_offset(offset + ops_end)
+            return dst_start, dst_end
+        cb = functools.partial(
+            get_match_tag_cb, b1, begin_tag_offset, end_tag_offset, dst_offset)
+        return self._cached_match.quick_match(text1, textn, cb)
+
+    def get_adjacent_panes(self, pane):
+        if pane + 1 < self.num_panes:
+            yield pane + 1
+        if pane - 1 >= 0:
+            yield pane - 1
+
+    def replace_match(self, pane, begin_tag, end_tag):
+        src_text = self.textbuffer[pane].get_text(begin_tag, end_tag, False)
+        for p in self.get_adjacent_panes(pane):
+            mtag = self.get_match_tag(pane, p, begin_tag, end_tag)
+            self.replace_text(src_text, p, mtag[0], mtag[1])
 
     @with_focused_pane
     def add_sync_point(self, pane, *args):

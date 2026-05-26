@@ -207,6 +207,16 @@ class MeldSourceView(GtkSource.View, SourceViewHelperMixin):
         inline_tag = GtkSource.Tag.new("inline")
         inline_tag.props.draw_spaces = True
         buf.get_tag_table().add(inline_tag)
+        inline_tag = GtkSource.Tag.new("inline-clickable")
+        inline_tag.props.draw_spaces = True
+        inline_tag.props.weight = Pango.Weight.ULTRAHEAVY
+        inline_tag.props.underline = Pango.Underline.DOUBLE
+        buf.get_tag_table().add(inline_tag)
+        inline_tag = GtkSource.Tag.new("inline-replaceable")
+        inline_tag.props.draw_spaces = True
+        inline_tag.props.strikethrough = True
+        inline_tag.props.weight = Pango.Weight.BOLD
+        buf.get_tag_table().add(inline_tag)
         buf.create_tag("dimmed")
         self.set_buffer(buf)
         self.connect('notify::overscroll-num-lines', self.notify_overscroll)
@@ -276,6 +286,12 @@ class MeldSourceView(GtkSource.View, SourceViewHelperMixin):
             tag = buf.get_tag_table().lookup("inline")
             tag.props.background_rgba = colour_lookup_with_fallback(
                 "meld:inline", "background")
+            tag = buf.get_tag_table().lookup("inline-clickable")
+            tag.props.background_rgba = colour_lookup_with_fallback(
+                "meld:inline-clickable", "background")
+            tag = buf.get_tag_table().lookup("inline-replaceable")
+            tag.props.background_rgba = colour_lookup_with_fallback(
+                "meld:inline-replaceable", "background")
             tag = buf.get_tag_table().lookup("dimmed")
             tag.props.foreground_rgba = colour_lookup_with_fallback(
                 "meld:dimmed", "foreground")
