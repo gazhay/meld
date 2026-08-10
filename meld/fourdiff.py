@@ -134,36 +134,90 @@ def _verify_action_lists(diff: FileDiff):
     assert set(expected_stateful_names) == stateful_names
 
 
-class ShrinkingBin(Gtk.Bin):
+class ShrinkingBin(Gtk.Widget):
     """
-    A bin which reports its preferred width to be the minimum width of its child
+    A widget which reports its preferred width to be the minimum width of its child
     """
 
-    def do_get_preferred_width(self):
-        child = self.get_child()
+    def __init__(self, child=None, **kwargs):
+        super().__init__(**kwargs)
+        self._child = None
+        if child:
+            self.set_child(child)
+
+    def set_child(self, child):
+        if self._child:
+            self._child.unparent()
+        self._child = child
+        if child:
+            child.set_parent(self)
+
+    def get_child(self):
+        return self._child
+
+    def do_measure(self, orientation, for_size):
+        child = self._child
         if not child or not child.get_visible():
-            return
-        min_width, _natural_width = child.get_preferred_width()
-        return (min_width, min_width)
+            return (0, 0, -1, -1)
+        min_size, nat_size, min_baseline, nat_baseline = child.measure(
+            orientation, for_size
+        )
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            return (min_size, min_size, min_baseline, nat_baseline)
+        else:
+            return (min_size, nat_size, min_baseline, nat_baseline)
+
+    def do_size_allocate(self, width, height, baseline):
+        if self._child and self._child.get_visible():
+            self._child.allocate(width, height, baseline, None)
+
+    def do_dispose(self):
+        if self._child:
+            self._child.unparent()
+            self._child = None
+        Gtk.Widget.do_dispose(self)
 
 
-class ExactSizeBin(Gtk.Bin):
+class ExactSizeBin(Gtk.Widget):
     """
-    A bin which allocates its exact size request to its child
+    A widget which allocates its exact size request to its child
     """
 
-    def do_get_preferred_width(self):
-        req_width, _req_height = self.get_size_request()
-        return req_width if req_width != -1 else Gtk.Bin.do_get_preferred_width(self)
+    def __init__(self, child=None, **kwargs):
+        super().__init__(**kwargs)
+        self._child = None
+        if child:
+            self.set_child(child)
 
-    def do_get_preferred_height(self):
-        _req_width, req_height = self.get_size_request()
-        return req_height if req_height != -1 else Gtk.Bin.do_get_preferred_height(self)
+    def set_child(self, child):
+        if self._child:
+            self._child.unparent()
+        self._child = child
+        if child:
+            child.set_parent(self)
+
+    def get_child(self):
+        return self._child
+
+    def do_measure(self, orientation, for_size):
+        req_width, req_height = self.get_size_request()
+        min_size, nat_size, min_baseline, nat_baseline = Gtk.Widget.do_measure(
+            self, orientation, for_size
+        )
+        if orientation == Gtk.Orientation.HORIZONTAL:
+            if req_width != -1:
+                min_size = nat_size = req_width
+        elif orientation == Gtk.Orientation.VERTICAL:
+            if req_height != -1:
+                min_size = nat_size = req_height
+        else:
+            assert False, "Unexpected orientation"
+        return min_size, nat_size, min_baseline, nat_baseline
 
     def do_size_allocate(self, alloc: Gdk.Rectangle):
-        Gtk.Bin.do_size_allocate(self, alloc)
+        Gtk.Widget.do_size_allocate(self, alloc)
 
-        child = self.get_child()
+        child = self._child
         if not child or not child.get_visible():
             return
 
@@ -175,6 +229,12 @@ class ExactSizeBin(Gtk.Bin):
         child_alloc.height = req_height if req_height != -1 else alloc.height
         child.size_allocate(child_alloc)
         child.set_clip(alloc)
+
+    def do_dispose(self):
+        if self._child:
+            self._child.unparent()
+            self._child = None
+        Gtk.Widget.do_dispose(self)
 
 
 def wrap_widget_with(widget, container):
@@ -222,8 +282,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
     close_signal = MeldDoc.close_signal
     create_diff_signal = MeldDoc.create_diff_signal
     file_changed_signal = MeldDoc.file_changed_signal
-    label_changed = MeldDoc.label_changed
-    move_diff = MeldDoc.move_diff
     tab_state_changed = MeldDoc.tab_state_changed
 
     __gsettings_bindings_view__ = (
@@ -240,6 +298,9 @@ class FourDiff(Gtk.Overlay, MeldDoc):
     )
     show_overview_map = GObject.Property(type=bool, default=True)
     overview_map_style = GObject.Property(type=str, default="chunkmap")
+
+    tab_title = GObject.Property(type=str, nick="Title used for tab labels")
+    tab_tooltip = GObject.Property(type=str, nick="Tooltip used for tab labels")
 
     action_mode = GObject.Property(
         type=int,
@@ -332,7 +393,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                 tv.connect("focus-in-event", self.on_textview_focus_in_event, diff_i)
 
         for diff in self.diffs:
-            diff.connect("label-changed", self.on_diff_label_changed)
+            diff.tab_title.connect("value-changed", self.on_diff_label_changed)
 
         meld_settings = get_meld_settings()
         self.settings_handlers = [
@@ -520,9 +581,10 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         label_text = " — ".join(shortnames)
         tooltip_names = filenames
         tooltip_text = "\n".join((_("File comparison:"), *tooltip_names))
-        self.label_changed.emit(label_text, tooltip_text)
+        self.tab_title = label_text
+        self.tab_tooltip = GLib.markup_escape_text(tooltip_text)
 
-    def on_diff_label_changed(self, _diff, _label_text, _tooltip_text):
+    def on_diff_label_changed(self, *_args):
         self.recompute_label()
 
     def get_comparison(self):
