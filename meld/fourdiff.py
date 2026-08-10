@@ -26,72 +26,73 @@ from meld.settings import bind_settings, get_meld_settings
 
 log = logging.getLogger(__name__)
 
-# These lists contain all the actions in FileDiff, except for the actions generated for each filter.
+# These lists contain all the actions in FileDiff, except for the actions generated for
+# each filter.
 # Those lists are verified by _verify_action_lists()
 
 FWD_TO_ACTIVE_ACTIONS = [
-    'add-sync-point',
-    'remove-sync-point',
-    'clear-sync-point',
-    'copy',
-    'copy-full-path',
-    'cut',
-    'file-push-left',
-    'file-push-right',
-    'file-pull-left',
-    'file-pull-right',
-    'file-copy-left-up',
-    'file-copy-right-up',
-    'file-copy-left-down',
-    'file-copy-right-down',
-    'file-delete',
-    'find',
-    'find-next',
-    'find-previous',
-    'find-replace',
-    'format-as-patch',
-    'go-to-line',
-    'merge-all-left',
-    'merge-all-right',
-    'merge-all',
-    'next-change',
-    'next-pane',
-    'open-external',
-    'open-folder',
-    'paste',
-    'previous-change',
-    'previous-pane',
-    'redo',
-    'undo',
+    "add-sync-point",
+    "remove-sync-point",
+    "clear-sync-point",
+    "copy",
+    "copy-full-path",
+    "cut",
+    "file-push-left",
+    "file-push-right",
+    "file-pull-left",
+    "file-pull-right",
+    "file-copy-left-up",
+    "file-copy-right-up",
+    "file-copy-left-down",
+    "file-copy-right-down",
+    "file-delete",
+    "find",
+    "find-next",
+    "find-previous",
+    "find-replace",
+    "format-as-patch",
+    "go-to-line",
+    "merge-all-left",
+    "merge-all-right",
+    "merge-all",
+    "next-change",
+    "next-pane",
+    "open-external",
+    "open-folder",
+    "paste",
+    "previous-change",
+    "previous-pane",
+    "redo",
+    "undo",
 ]
 
 FWD_TO_DIFF2_ACTIONS = [
-    'file-previous-conflict',
-    'file-next-conflict',
+    "file-previous-conflict",
+    "file-next-conflict",
 ]
 
 FWD_TO_ALL_ACTIONS = [
-    'refresh',
-    'revert',
-    'save',
-    'save-all',
+    "refresh",
+    "revert",
+    "save",
+    "save-all",
 ]
 
 DISABLED_ACTIONS = [
     # save-as is disabled since we don't want filenames to change
-    'save-as',
+    "save-as",
     # swap-2-panes is disabled since reversing all panes would require more work, and I
     # currently don't see why it should be useful.
-    'swap-2-panes',
+    "swap-2-panes",
 ]
 
 PROPERTY_ACTIONS = {
-    'show-overview-map': 'show-overview-map',
-    'lock-scrolling': 'lock_scrolling',
+    "show-overview-map": "show-overview-map",
+    "lock-scrolling": "lock_scrolling",
 }
 
 STATE_ACTIONS = {
-    'text-filter': False,
+    "text-filter": False,
 }
 
 
@@ -106,7 +107,7 @@ def _get_diff_actions(diff: FileDiff) -> tuple[set[str], set[str]]:
             stateless_action_names.add(action_name)
         else:
             # Assert all stateful actions have type bool
-            assert state.get_type_string() == 'b'
+            assert state.get_type_string() == "b"
             stateful_action_names.add(action_name)
     return stateless_action_names, stateful_action_names
 
@@ -114,13 +115,22 @@ def _get_diff_actions(diff: FileDiff) -> tuple[set[str], set[str]]:
 def _verify_action_lists(diff: FileDiff):
     """Assert that the action lists cover all the actions in the FileDiff."""
     stateless_names, stateful_names = _get_diff_actions(diff)
-    expected_stateless_names = FWD_TO_ACTIVE_ACTIONS + FWD_TO_DIFF2_ACTIONS + FWD_TO_ALL_ACTIONS + DISABLED_ACTIONS
+    expected_stateless_names = (
+        FWD_TO_ACTIVE_ACTIONS
+        + FWD_TO_DIFF2_ACTIONS
+        + FWD_TO_ALL_ACTIONS
+        + DISABLED_ACTIONS
+    )
     assert set(expected_stateless_names) == stateless_names
     # In addition to the listed actions, the FileDiff creates
     # stateful actions for each text filter. We expect those as well.
     n_text_filters = len(get_meld_settings().text_filters)
-    text_filter_action_names = [TEXT_FILTER_ACTION_FORMAT.format(i) for i in range(n_text_filters)]
-    expected_stateful_names = list(PROPERTY_ACTIONS) + list(STATE_ACTIONS) + text_filter_action_names
+    text_filter_action_names = [
+        TEXT_FILTER_ACTION_FORMAT.format(i) for i in range(n_text_filters)
+    ]
+    expected_stateful_names = (
+        list(PROPERTY_ACTIONS) + list(STATE_ACTIONS) + text_filter_action_names
+    )
     assert set(expected_stateful_names) == stateful_names
 
 
@@ -128,6 +138,7 @@ class ShrinkingBin(Gtk.Bin):
     """
     A bin which reports its preferred width to be the minimum width of its child
     """
+
     def do_get_preferred_width(self):
         child = self.get_child()
         if not child or not child.get_visible():
@@ -140,6 +151,7 @@ class ExactSizeBin(Gtk.Bin):
     """
     A bin which allocates its exact size request to its child
     """
+
     def do_get_preferred_width(self):
         req_width, _req_height = self.get_size_request()
         return req_width if req_width != -1 else Gtk.Bin.do_get_preferred_width(self)
@@ -215,9 +227,9 @@ class FourDiff(Gtk.Overlay, MeldDoc):
     tab_state_changed = MeldDoc.tab_state_changed
 
     __gsettings_bindings_view__ = (
-        ('ignore-blank-lines', 'ignore-blank-lines'),
-        ('show-overview-map', 'show-overview-map'),
-        ('overview-map-style', 'overview-map-style'),
+        ("ignore-blank-lines", "ignore-blank-lines"),
+        ("show-overview-map", "show-overview-map"),
+        ("overview-map-style", "overview-map-style"),
     )
 
     ignore_blank_lines = GObject.Property(
@@ -227,17 +239,17 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         default=False,
     )
     show_overview_map = GObject.Property(type=bool, default=True)
-    overview_map_style = GObject.Property(type=str, default='chunkmap')
+    overview_map_style = GObject.Property(type=str, default="chunkmap")
 
     action_mode = GObject.Property(
         type=int,
-        nick='Action mode for chunk change actions',
+        nick="Action mode for chunk change actions",
         default=ActionMode.Replace,
     )
 
     lock_scrolling = GObject.Property(
         type=bool,
-        nick='Lock scrolling of all panes',
+        nick="Lock scrolling of all panes",
         default=False,
     )
 
@@ -252,11 +264,13 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         # Init diff0, diff1, and diff2
         self.diff0 = FileDiff(2)
-        self.diff0.scrolledwindow0.connect('size-allocate', self.on_diff0_scrolledwindow0_size_allocate)
+        self.diff0.scrolledwindow0.connect(
+            "size-allocate", self.on_diff0_scrolledwindow0_size_allocate
+        )
         self.scheduler.add_scheduler(self.diff0.scheduler)
 
         self.diff1 = FileDiff(2)
-        self.diff1.connect('size-allocate', self.on_diff1_size_allocate)
+        self.diff1.connect("size-allocate", self.on_diff1_size_allocate)
         self.exact0 = ExactSizeBin()
         self.exact0.show()
         wrap_widget_with(self.diff1.scrolledwindow0, self.exact0)
@@ -266,7 +280,9 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.scheduler.add_scheduler(self.diff1.scheduler)
 
         self.diff2 = FileDiff(2, mark_pane1_conflict_markers=True)
-        self.diff2.scrolledwindow0.connect('size-allocate', self.on_diff2_scrolledwindow0_size_allocate)
+        self.diff2.scrolledwindow0.connect(
+            "size-allocate", self.on_diff2_scrolledwindow0_size_allocate
+        )
         self.scheduler.add_scheduler(self.diff2.scheduler)
         self.undosequence = self.diff2.undosequence
 
@@ -284,14 +300,14 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.hbox.set_homogeneous(True)
         self.hbox.pack_start(self.diff0, expand=True, fill=True, padding=0)
         self.hbox.pack_start(self.diff2, expand=True, fill=True, padding=0)
-        self.hbox.connect('size-allocate', self.on_hbox_size_allocate)
+        self.hbox.connect("size-allocate", self.on_hbox_size_allocate)
         self.add_overlay(self.hbox)
 
         # self.cover is shown beneath diff1, to hide hbox0.
         # The "background" style causes it to be opaque rather than transparent.
         self.cover = Gtk.Box()
         self.cover.show()
-        self.cover.get_style_context().add_class('background')
+        self.cover.get_style_context().add_class("background")
         self.add_overlay(self.cover)
 
         # We put diff1 inside ShrinkingBin, so it will only get its minimum width
@@ -302,8 +318,8 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.add_overlay(self.shrinking_bin)
 
         # We always have an active FileDiff, which is self.diffs[self.active_diff_i].
-        # When Showing 1 FileDiff, it is the active diff. When showing 2 FileDiffs, it's the one which last
-        # received focus.
+        # When Showing 1 FileDiff, it is the active diff. When showing 2 FileDiffs, it's
+        # the one which last received focus.
         self.active_diff_i = 2
         self.active_diff = self.diffs[self.active_diff_i]
         # Start with showing 2 diffs
@@ -313,18 +329,19 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         for diff_i in [0, 2]:
             for tv in self.diffs[diff_i].textview:
-                tv.connect('focus-in-event', self.on_textview_focus_in_event, diff_i)
+                tv.connect("focus-in-event", self.on_textview_focus_in_event, diff_i)
 
         for diff in self.diffs:
-            diff.connect('label-changed', self.on_diff_label_changed)
+            diff.connect("label-changed", self.on_diff_label_changed)
 
         meld_settings = get_meld_settings()
         self.settings_handlers = [
-            meld_settings.connect(
-                "text-filters-changed", self.on_text_filters_changed)
+            meld_settings.connect("text-filters-changed", self.on_text_filters_changed)
         ]
         self.create_text_filters()
-        text_filter_action = Gio.SimpleAction.new_stateful("text-filter", None, GLib.Variant.new_boolean(False))
+        text_filter_action = Gio.SimpleAction.new_stateful(
+            "text-filter", None, GLib.Variant.new_boolean(False)
+        )
         self.view_action_group.add_action(text_filter_action)
 
         self._init_actions()
@@ -344,48 +361,54 @@ class FourDiff(Gtk.Overlay, MeldDoc):
             _verify_action_lists(diff)
 
         my_actions = [
-            ('fourdiff-toggle-view', self.action_toggle_view),
-            ('fourdiff-swap-remote-and-local', self.action_swap_remote_and_local),
+            ("fourdiff-toggle-view", self.action_toggle_view),
+            ("fourdiff-swap-remote-and-local", self.action_swap_remote_and_local),
         ]
         for name, callback in my_actions:
             action = Gio.SimpleAction.new(name, None)
-            action.connect('activate', callback)
+            action.connect("activate", callback)
             self.view_action_group.add_action(action)
 
         for name in FWD_TO_ACTIVE_ACTIONS:
             action = Gio.SimpleAction.new(name, None)
-            action.connect('activate', self.on_fwd_to_active_action_activate)
+            action.connect("activate", self.on_fwd_to_active_action_activate)
             self.view_action_group.add_action(action)
 
         for name in FWD_TO_DIFF2_ACTIONS:
             action = Gio.SimpleAction.new(name, None)
-            action.connect('activate', self.on_fwd_to_diff2_action_activate)
+            action.connect("activate", self.on_fwd_to_diff2_action_activate)
             self.view_action_group.add_action(action)
-            self.view_action_group.lookup(name).set_enabled(self.diff2.view_action_group.lookup(name).get_enabled())
+            self.view_action_group.lookup(name).set_enabled(
+                self.diff2.view_action_group.lookup(name).get_enabled()
+            )
 
         for name in FWD_TO_ALL_ACTIONS:
             action = Gio.SimpleAction.new(name, None)
-            action.connect('activate', self.on_fwd_to_all_action_activate)
+            action.connect("activate", self.on_fwd_to_all_action_activate)
             self.view_action_group.add_action(action)
 
         for action_name, prop_name in PROPERTY_ACTIONS.items():
             action = Gio.PropertyAction.new(action_name, self, prop_name)
-            action.connect('notify::state', self.on_property_action_change_state)
+            action.connect("notify::state", self.on_property_action_change_state)
             self.view_action_group.add_action(action)
 
         for action_name, state in STATE_ACTIONS.items():
-            action = Gio.SimpleAction.new_stateful(name, None, GLib.Variant.new_boolean(state))
-            action.connect('activate', self.on_fwd_to_all_action_activate)
-            action.connect('change-state', self.on_action_change_state)
+            action = Gio.SimpleAction.new_stateful(
+                name, None, GLib.Variant.new_boolean(state)
+            )
+            action.connect("activate", self.on_fwd_to_all_action_activate)
+            action.connect("change-state", self.on_action_change_state)
             self.view_action_group.add_action(action)
 
         for diff_i, diff in enumerate(self.diffs):
-            diff.view_action_group.connect('action-enabled-changed', self.on_diff_action_enabled_changed, diff_i)
+            diff.view_action_group.connect(
+                "action-enabled-changed", self.on_diff_action_enabled_changed, diff_i
+            )
 
         self.toolbar_actions = self.diff2.toolbar_actions
         builder = self.diff2.toolbar_actions_builder
-        builder.get_object('fourdiff_swap_remote_and_local_button').set_visible(True)
-        builder.get_object('fourdiff_toggle_view_button').set_visible(True)
+        builder.get_object("fourdiff_swap_remote_and_local_button").set_visible(True)
+        builder.get_object("fourdiff_toggle_view_button").set_visible(True)
 
     def on_diff0_scrolledwindow0_size_allocate(self, _widget, allocation):
         # Make diff1.scrolledwindow0 get the same size as diff0.scrolledwindow0
@@ -396,11 +419,14 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.exact1.set_size_request(allocation.width, -1)
 
     def set_diff1_linkmap0_width_request(self):
-        # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the same position as
-        # diff2.scrolledwindow0.
-        # There is one widget between diff1.linkmap0 and diff1.scrolledwindow1, which is diff1.actiongutter1.
+        # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the
+        # same position as diff2.scrolledwindow0.
+        # There is one widget between diff1.linkmap0 and diff1.scrolledwindow1, which is
+        # diff1.actiongutter1.
         # So we subtract its width from the requested width of diff1.linkmap0.
-        xy_or_none = self.diff2.scrolledwindow0.translate_coordinates(self.diff1.linkmap0, 0, 0)
+        xy_or_none = self.diff2.scrolledwindow0.translate_coordinates(
+            self.diff1.linkmap0, 0, 0
+        )
         if xy_or_none is None:
             # If the widgets weren't realized yet, do nothing.
             return
@@ -431,7 +457,9 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
     def on_property_action_change_state(self, paction, _param_spec):
         for diff in self.diffs:
-            diff.view_action_group.change_action_state(paction.props.name, paction.props.state)
+            diff.view_action_group.change_action_state(
+                paction.props.name, paction.props.state
+            )
 
     def on_action_change_state(self, action, state):
         for diff in self.diffs:
@@ -439,17 +467,22 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
     def _update_active_diff(self):
         """
-        Update self.active_diff_i based on self.active_diff_i_when_showing_2_diffs and self.is_showing_2_diffs.
+        Update self.active_diff_i based on self.active_diff_i_when_showing_2_diffs and
+        self.is_showing_2_diffs.
         If changed, send signals and update actions accordingly.
         """
-        active_diff_i = self.active_diff_i_when_showing_2_diffs if self.is_showing_2_diffs else 1
+        active_diff_i = (
+            self.active_diff_i_when_showing_2_diffs if self.is_showing_2_diffs else 1
+        )
         if active_diff_i != self.active_diff_i:
             self.active_diff_i = active_diff_i
             self.active_diff = self.diffs[active_diff_i]
 
             diff_view_action_group = self.active_diff.view_action_group
             for name in FWD_TO_ACTIVE_ACTIONS:
-                self.view_action_group.lookup(name).set_enabled(diff_view_action_group.lookup(name).get_enabled())
+                self.view_action_group.lookup(name).set_enabled(
+                    diff_view_action_group.lookup(name).get_enabled()
+                )
 
     def on_textview_focus_in_event(self, _textbuffer, _event, diff_i):
         self.active_diff_i_when_showing_2_diffs = diff_i
@@ -501,18 +534,23 @@ class FourDiff(Gtk.Overlay, MeldDoc):
     def _on_adj_changed(me: Gtk.Adjustment, other: Gtk.Adjustment):
         """Adjust `other` adjustment when `me` was changed."""
         if me.get_upper() != other.get_upper():
-            # We are during a change, for example due to changing window size or word-wrap mode.
-            # There's no point in syncing in this case.
+            # We are during a change, for example due to changing window size or
+            # word-wrap mode. There's no point in syncing in this case.
             return
         v = me.get_value()
         if other.get_value() != v:
             other.set_value(v)
 
     def connect_scrolledwindows(self):
-        sw_pairs = [(self.diff0.scrolledwindow[0], self.diff1.scrolledwindow[0]),
-                    (self.diff1.scrolledwindow[1], self.diff2.scrolledwindow[0])]
+        sw_pairs = [
+            (self.diff0.scrolledwindow[0], self.diff1.scrolledwindow[0]),
+            (self.diff1.scrolledwindow[1], self.diff2.scrolledwindow[0]),
+        ]
         for sw0, sw1 in sw_pairs:
-            for method in [Gtk.ScrolledWindow.get_vadjustment, Gtk.ScrolledWindow.get_hadjustment]:
+            for method in [
+                Gtk.ScrolledWindow.get_vadjustment,
+                Gtk.ScrolledWindow.get_hadjustment,
+            ]:
                 adj0 = method(sw0)
                 adj1 = method(sw1)
                 for event in ["value-changed", "changed"]:
@@ -563,21 +601,29 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                 parameter_type=None,
                 state=GLib.Variant.new_boolean(filt.active),
             )
-            action.connect('change-state', self._update_text_filter)
+            action.connect("change-state", self._update_text_filter)
             action.set_enabled(filt.filter is not None)
             self.view_action_group.add_action(action)
 
     def on_delete_event(self):
         buf = self.diff2.textbuffer[1]
-        text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(),
-                            include_hidden_chars=True)
-        if '<<<<<<<' in text or '>>>>>>>>' in text:
+        text = buf.get_text(
+            buf.get_start_iter(), buf.get_end_iter(), include_hidden_chars=True
+        )
+        if "<<<<<<<" in text or ">>>>>>>>" in text:
             response = misc.modal_dialog(
                 primary=_("Close with conflict markers?"),
-                secondary=_("There are conflict markers remaining. Are you sure you want to close?"),
+                secondary=_(
+                    "There are conflict markers remaining. Are you sure you want to"
+                    " close?"
+                ),
                 buttons=[
                     (_("_Cancel"), Gtk.ResponseType.CANCEL, None),
-                    (_("Close with conflict markers"), Gtk.ResponseType.OK, Gtk.STYLE_CLASS_WARNING),
+                    (
+                        _("Close with conflict markers"),
+                        Gtk.ResponseType.OK,
+                        Gtk.STYLE_CLASS_WARNING,
+                    ),
                 ],
                 messagetype=Gtk.MessageType.WARNING,
             )
@@ -598,5 +644,5 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         for h in self.settings_handlers:
             meld_settings.disconnect(h)
 
-        self.emit('close', 0)
+        self.emit("close", 0)
         return Gtk.ResponseType.OK

@@ -108,7 +108,8 @@ def get_replace_index(marker_lines: Sequence[MarkerLine]) -> int:
     """
     Given a list of MarkerLines, representing lines with conflict markers,
     return the index in this list which should be transformed to the seq_b lines.
-    0 means before the first conflict marker, len(marker_lines) means after the last marker.
+    0 means before the first conflict marker, len(marker_lines) means after the last
+    marker.
     """
     # First look for the first marker with lines to replace.
     for i, (line_i, cmarker_type) in enumerate(marker_lines):
@@ -145,7 +146,8 @@ def mark_conflict_markers_single(
     replace_index = get_replace_index(marker_lines)
     r: list[DiffChunk] = []
     for marker_i in range(len(marker_lines) + 1):
-        # First add the non-marker range, between marker_lines[marker_i] and the previous marker line.
+        # First add the non-marker range, between marker_lines[marker_i] and the
+        # previous marker line.
         start_a = (
             marker_lines[marker_i - 1].line_i + 1 if marker_i > 0 else chunk.start_a
         )
@@ -247,8 +249,8 @@ class Differ(GObject.GObject):
                 break
         self._has_mergeable_changes = (False, mergeable0, mergeable1, False)
 
-        # In regular mode, conflicts can only occur when there are three panes, and will always
-        # involve the middle pane.
+        # In regular mode, conflicts can only occur when there are three panes, and will
+        # always involve the middle pane.
         # In mark_pane1_conflict_markers mode, we only include conflict chunks for the
         # beginning of a conflict section, so moving between conflicts would behave as
         # we expect.
