@@ -182,7 +182,7 @@ class MeldApp(Adw.Application):
                 _("Start a version control comparison"),
             ),
             (
-                "<%s> <%s> [<%s>] [<%s>]" % ((_("file"),) * 3),
+                "<%s> <%s> [<%s>] [<%s>]" % ((_("file"),) * 4),
                 _("Start a 2- or 3- or 4-way file comparison"),
             ),
             (
