@@ -23,7 +23,7 @@ from gi.repository import Gdk, Gio, GLib, Gtk
 # Import support module to get all builder-constructed widgets in the namespace
 import meld.ui.gladesupport  # noqa: F401
 import meld.ui.util
-from meld.conf import PROFILE, _
+from meld.conf import IS_DEVEL, _
 from meld.const import (
     FILE_FILTER_ACTION_FORMAT,
     TEXT_FILTER_ACTION_FORMAT,
@@ -117,7 +117,7 @@ class MeldWindow(Gtk.ApplicationWindow):
         self.scheduler = LifoScheduler()
         self.scheduler.connect("runnable", self.on_scheduler_runnable)
 
-        if PROFILE != '':
+        if IS_DEVEL:
             style_context = self.get_style_context()
             style_context.add_class("devel")
 
@@ -475,6 +475,8 @@ class MeldWindow(Gtk.ApplicationWindow):
         self.scheduler.add_scheduler(doc.scheduler)
         path = gfile.get_path()
         doc.set_location(path)
+        # Ensure that we have the correct state for the file we're opening
+        doc.vc.refresh_vc_state()
         doc.create_diff_signal.connect(
             lambda obj, arg, kwargs: self.append_diff(arg, **kwargs))
         doc.run_diff(path)

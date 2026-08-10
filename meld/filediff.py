@@ -1900,7 +1900,7 @@ class FileDiff(Gtk.Box, MeldDoc):
         secondary = _("Do you want to reload the file?")
         self.msgarea_mgr[pane].add_action_msg(
             'dialog-warning-symbolic', primary, secondary, _("_Reload"),
-            self.action_revert)
+            self.revert_pane, pane)
 
     def refresh_comparison(self, *args):
         """Refresh the view by clearing and redoing all comparisons"""
@@ -2367,6 +2367,14 @@ class FileDiff(Gtk.Box, MeldDoc):
         gfiles = [b.data.gfile for b in buffers]
         encodings = [b.data.encoding for b in buffers]
         self.set_files(gfiles, encodings=encodings)
+
+    def revert_pane(self, *extra):
+        pane = extra[0]
+        if not self.check_unsaved_changes(self.textbuffer[pane:pane + 1]):
+            return
+
+        data = self.textbuffer[pane].data
+        self.set_file(pane, data.gfile, data.encoding)
 
     def action_refresh(self, *extra):
         self.refresh_comparison()

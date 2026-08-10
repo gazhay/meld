@@ -122,6 +122,22 @@ class MeldNotebook(Gtk.Notebook):
 
         if event:
             popup.popup_at_pointer(event)
+            # TODO: Clearly this is non-sensical, but if we just do
+            # popup_at_pointer then we get a crash. If we just do popup_at_rect
+            # it seems impossible to get the positioning correct because it
+            # seems like we get an event position relative to the tab, even
+            # though the event is on the notebook.
+            gdk_window = Gtk.Widget.get_window(widget)
+            if type(gdk_window).__name__ == "GdkWaylandWindow":
+                rect = Gdk.Rectangle()
+                rect.x, rect.y = event.x, event.y
+                popup.popup_at_rect(
+                    gdk_window,
+                    rect,
+                    Gdk.Gravity.NORTH_WEST,
+                    Gdk.Gravity.SOUTH_EAST,
+                    None,
+                )
         else:
             popup.popup_at_widget(
                 widget,
