@@ -47,10 +47,9 @@ from meld.windowstate import SavedWindowState
 log = logging.getLogger(__name__)
 
 
-@Gtk.Template(resource_path='/org/gnome/meld/ui/appwindow.ui')
+@Gtk.Template(resource_path="/org/gnome/meld/ui/appwindow.ui")
 class MeldWindow(Adw.ApplicationWindow):
-
-    __gtype_name__ = 'MeldWindow'
+    __gtype_name__ = "MeldWindow"
 
     folder_filter_button: Gtk.Button = Gtk.Template.Child()
     gear_menu_button = Gtk.Template.Child()
@@ -73,31 +72,34 @@ class MeldWindow(Adw.ApplicationWindow):
         )
         for name, callback in actions:
             action = Gio.SimpleAction.new(name, None)
-            action.connect('activate', callback)
+            action.connect("activate", callback)
             self.add_action(action)
 
         state_actions = (
             (
-                "fullscreen", self.action_fullscreen_change,
+                "fullscreen",
+                self.action_fullscreen_change,
                 GLib.Variant.new_boolean(False),
             ),
             (
-                "gear-menu", None, GLib.Variant.new_boolean(False),
+                "gear-menu",
+                None,
+                GLib.Variant.new_boolean(False),
             ),
         )
-        for (name, callback, state) in state_actions:
+        for name, callback, state in state_actions:
             action = Gio.SimpleAction.new_stateful(name, None, state)
             if callback:
-                action.connect('change-state', callback)
+                action.connect("change-state", callback)
             self.add_action(action)
 
         # Initialise sensitivity for important actions
-        self.lookup_action('stop').set_enabled(False)
+        self.lookup_action("stop").set_enabled(False)
 
         # Fake out the spinner on Windows or X11 forwarding. See Gitlab
         # issues #133 and #507.
         if os.name == "nt" or guess_if_remote_x11():
-            for attr in ('stop', 'hide', 'show', 'start'):
+            for attr in ("stop", "hide", "show", "start"):
                 setattr(self.spinner, attr, lambda *args: True)
 
         drop_target = Gtk.DropTarget.new(GObject.TYPE_NONE, Gdk.DragAction.COPY)
@@ -124,18 +126,15 @@ class MeldWindow(Adw.ApplicationWindow):
         self.update_text_filters(meld_settings)
         self.update_filename_filters(meld_settings)
         self.settings_handlers = [
-            meld_settings.connect(
-                "text-filters-changed", self.update_text_filters),
-            meld_settings.connect(
-                "file-filters-changed", self.update_filename_filters),
+            meld_settings.connect("text-filters-changed", self.update_text_filters),
+            meld_settings.connect("file-filters-changed", self.update_filename_filters),
         ]
 
     def update_filename_filters(self, settings):
         filter_items_model = Gio.Menu()
         for i, filt in enumerate(settings.file_filters):
             name = FILE_FILTER_ACTION_FORMAT.format(i)
-            filter_items_model.append(
-                label=filt.label, detailed_action=f'view.{name}')
+            filter_items_model.append(label=filt.label, detailed_action=f"view.{name}")
         section = Gio.MenuItem.new_section(_("Filename"), filter_items_model)
         section.set_attribute([("id", "s", "custom-filter-section")])
         filter_model = self.folder_filter_button.get_menu_model()
@@ -145,8 +144,7 @@ class MeldWindow(Adw.ApplicationWindow):
         filter_items_model = Gio.Menu()
         for i, filt in enumerate(settings.text_filters):
             name = TEXT_FILTER_ACTION_FORMAT.format(i)
-            filter_items_model.append(
-                label=filt.label, detailed_action=f'view.{name}')
+            filter_items_model.append(label=filt.label, detailed_action=f"view.{name}")
         section = Gio.MenuItem.new_section(None, filter_items_model)
         section.set_attribute([("id", "s", "custom-filter-section")])
         filter_model = self.text_filter_button.get_menu_model()
@@ -181,7 +179,7 @@ class MeldWindow(Adw.ApplicationWindow):
 
             # On window close, this idle loop races widget destruction,
             # and so actions may already be gone at this point.
-            stop_action = self.lookup_action('stop')
+            stop_action = self.lookup_action("stop")
             if stop_action:
                 stop_action.set_enabled(False)
         return pending
@@ -190,7 +188,7 @@ class MeldWindow(Adw.ApplicationWindow):
         if not self.idle_hooked:
             self.spinner.show()
             self.spinner.start()
-            self.lookup_action('stop').set_enabled(True)
+            self.lookup_action("stop").set_enabled(True)
             self.idle_hooked = GLib.idle_add(self.on_idle)
 
     @Gtk.Template.Callback()
@@ -231,12 +229,12 @@ class MeldWindow(Adw.ApplicationWindow):
         newdoc = newtab.get_child()
         newdoc.on_container_switch_in_event(self)
 
-        self.lookup_action('close').set_enabled(bool(newdoc))
+        self.lookup_action("close").set_enabled(bool(newdoc))
 
-        if hasattr(newdoc, 'scheduler'):
+        if hasattr(newdoc, "scheduler"):
             self.scheduler.add_task(newdoc.scheduler)
 
-        if hasattr(newdoc, 'toolbar_actions'):
+        if hasattr(newdoc, "toolbar_actions"):
             self.view_toolbar.append(newdoc.toolbar_actions)
 
     def action_new_tab(self, action, parameter):
@@ -300,7 +298,7 @@ class MeldWindow(Adw.ApplicationWindow):
             self.append_recent(uri)
         except (IOError, ValueError):
             # FIXME: Need error handling, but no sensible display location
-            log.exception(f'Error opening recent file {uri}')
+            log.exception(f"Error opening recent file {uri}")
 
     def _append_page(self, doc):
         page = self.tabview.append(doc)
@@ -310,9 +308,11 @@ class MeldWindow(Adw.ApplicationWindow):
         # Change focus to the newly created page only if the user is on a
         # DirDiff or VcView page, or if it's a new tab page. This prevents
         # cycling through X pages when X diffs are initiated.
-        if isinstance(self.current_doc(), DirDiff) or \
-           isinstance(self.current_doc(), VcView) or \
-           isinstance(doc, NewDiffTab):
+        if (
+            isinstance(self.current_doc(), DirDiff)
+            or isinstance(self.current_doc(), VcView)
+            or isinstance(doc, NewDiffTab)
+        ):
             self.tabview.set_selected_page(self.tabview.get_page(doc))
 
         if hasattr(doc, "scheduler"):
@@ -320,7 +320,8 @@ class MeldWindow(Adw.ApplicationWindow):
         if isinstance(doc, MeldDoc):
             doc.file_changed_signal.connect(self.on_file_changed)
             doc.create_diff_signal.connect(
-                lambda obj, arg, kwargs: self.append_diff(arg, **kwargs))
+                lambda obj, arg, kwargs: self.append_diff(arg, **kwargs)
+            )
             doc.tab_state_changed.connect(self.on_page_state_changed)
         doc.close_signal.connect(self.page_removed)
 
@@ -350,8 +351,7 @@ class MeldWindow(Adw.ApplicationWindow):
             doc.scheduler.add_task(doc.auto_compare)
         return doc
 
-    def append_filediff(
-            self, gfiles, *, encodings=None, merge_output=None, meta=None):
+    def append_filediff(self, gfiles, *, encodings=None, merge_output=None, meta=None):
         assert len(gfiles) in (1, 2, 3)
 
         # Check whether to show image window or not.
@@ -370,10 +370,10 @@ class MeldWindow(Adw.ApplicationWindow):
     def append_filemerge(self, gfiles, merge_output=None):
         if len(gfiles) != 3:
             raise ValueError(
-                _("Need three files to auto-merge, got: %r") %
-                [f.get_parse_name() for f in gfiles])
-        doc = FileDiff(
-            len(gfiles), comparison_mode=FileComparisonMode.AutoMerge)
+                _("Need three files to auto-merge, got: %r")
+                % [f.get_parse_name() for f in gfiles]
+            )
+        doc = FileDiff(len(gfiles), comparison_mode=FileComparisonMode.AutoMerge)
         self._append_page(doc)
         doc.set_files(gfiles)
         if merge_output is not None:
@@ -399,15 +399,13 @@ class MeldWindow(Adw.ApplicationWindow):
             else:
                 have_files = True
         if have_directories and have_files:
-            raise ValueError(
-                _("Cannot compare a mixture of files and directories"))
+            raise ValueError(_("Cannot compare a mixture of files and directories"))
         elif have_directories:
             return self.append_dirdiff(gfiles, auto_compare)
         elif auto_merge:
             return self.append_filemerge(gfiles, merge_output=merge_output)
         else:
-            return self.append_filediff(
-                gfiles, merge_output=merge_output, meta=meta)
+            return self.append_filediff(gfiles, merge_output=merge_output, meta=meta)
 
     def append_fourdiff(self, gfiles: Sequence[Optional[Gio.File]]):
         assert len(gfiles) == 4
@@ -447,6 +445,7 @@ class MeldWindow(Adw.ApplicationWindow):
 
         def cleanup():
             self.scheduler.remove_scheduler(doc.scheduler)
+
         self.scheduler.add_task(cleanup)
         self.scheduler.add_scheduler(doc.scheduler)
         path = gfile.get_path()
@@ -454,11 +453,11 @@ class MeldWindow(Adw.ApplicationWindow):
         # Ensure that we have the correct state for the file we're opening
         doc.vc.refresh_vc_state()
         doc.create_diff_signal.connect(
-            lambda obj, arg, kwargs: self.append_diff(arg, **kwargs))
+            lambda obj, arg, kwargs: self.append_diff(arg, **kwargs)
+        )
         doc.run_diff(path)
 
-    def open_paths(self, gfiles, auto_compare=False, auto_merge=False,
-                   focus=False):
+    def open_paths(self, gfiles, auto_compare=False, auto_merge=False, focus=False):
         tab = None
         if len(gfiles) == 1:
             gfile = gfiles[0]
@@ -474,8 +473,9 @@ class MeldWindow(Adw.ApplicationWindow):
                 self._single_file_open(gfile)
 
         elif len(gfiles) in (2, 3):
-            tab = self.append_diff(gfiles, auto_compare=auto_compare,
-                                   auto_merge=auto_merge)
+            tab = self.append_diff(
+                gfiles, auto_compare=auto_compare, auto_merge=auto_merge
+            )
 
         elif len(gfiles) == 4:
             tab = self.append_fourdiff(gfiles)
@@ -498,4 +498,5 @@ class MeldWindow(Adw.ApplicationWindow):
         class DummyDoc:
             def __getattr__(self, a):
                 return lambda *x: None
+
         return DummyDoc()
