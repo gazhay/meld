@@ -18,7 +18,7 @@ import copy
 import functools
 import logging
 import math
-from typing import Callable, Optional, Tuple, Type
+from typing import Callable, ClassVar, Optional, Tuple, Type
 
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk, GtkSource
 
@@ -103,19 +103,19 @@ PANE_LEFT, PANE_RIGHT = -1, +1
 
 LOAD_PROGRESS_MARK = "meld-load-progress"
 #: Line length at which we'll cancel loads because of potential hangs
-LINE_LENGTH_LIMIT = 8 * 1024
+LINE_LENGTH_LIMIT = 16 * 1024
 
 
 class CursorDetails:
     __slots__ = (
+        "chunk",
+        "line",
+        "next",
+        "next_conflict",
         "pane",
         "pos",
-        "line",
-        "chunk",
         "prev",
-        "next",
         "prev_conflict",
-        "next_conflict",
     )
 
     def __init__(self):
@@ -133,8 +133,6 @@ class FileDiff(Gtk.Box, MeldDoc):
     create_diff_signal = MeldDoc.create_diff_signal
     file_changed_signal = MeldDoc.file_changed_signal
     tab_state_changed = MeldDoc.tab_state_changed
-
-    buttons = []
 
     __gsettings_bindings_view__ = (
         ("ignore-blank-lines", "ignore-blank-lines"),
@@ -209,7 +207,7 @@ class FileDiff(Gtk.Box, MeldDoc):
     differ: Type[Differ]
     comparison_mode: FileComparisonMode
 
-    keylookup = {
+    keylookup: ClassVar[dict] = {
         Gdk.KEY_Shift_L: MASK_SHIFT,
         Gdk.KEY_Shift_R: MASK_SHIFT,
         Gdk.KEY_Control_L: MASK_CTRL,
@@ -217,12 +215,15 @@ class FileDiff(Gtk.Box, MeldDoc):
     }
 
     # Identifiers for MsgArea messages
-    (MSG_SAME, MSG_SLOW_HIGHLIGHT, MSG_SYNCPOINTS) = list(range(3))
+    MSG_SAME = 0
+    MSG_SLOW_HIGHLIGHT = 1
+    MSG_SYNCPOINTS = 2
+    MSG_LINE_TOO_LONG = 3
     # Transient messages that should be removed if any file in the
     # comparison gets reloaded.
-    TRANSIENT_MESSAGES = {MSG_SAME, MSG_SLOW_HIGHLIGHT}
+    TRANSIENT_MESSAGES: ClassVar[set] = {MSG_SAME, MSG_SLOW_HIGHLIGHT}
 
-    __gsignals__ = {
+    __gsignals__: ClassVar[dict] = {
         "next-conflict-changed": (GObject.SignalFlags.RUN_FIRST, None, (bool, bool)),
     }
 
@@ -310,6 +311,7 @@ class FileDiff(Gtk.Box, MeldDoc):
         self._sync_hscroll_lock = False
         self.linediffer = self.differ(mark_pane1_conflict_markers)
         self.force_highlight = False
+        self.force_load = False
 
         self.syncpoints = Syncpoints(self.textbuffer[:num_panes])
         self.in_nested_textview_gutter_expose = False
@@ -438,8 +440,9 @@ class FileDiff(Gtk.Box, MeldDoc):
             buf.data.file_changed_signal.connect(self.notify_file_changed)
         self.update_text_actions_sensitivity()
 
-        self.findbar = FindBar(self.grid)
+        self.findbar = FindBar()
         self.findbar.set_visible(False)
+        self.findbar.set_text_views(self.textview)
         self.grid.attach(self.findbar, 0, 2, 10, 1)
 
         self.set_num_panes(num_panes)
@@ -1698,15 +1701,17 @@ class FileDiff(Gtk.Box, MeldDoc):
         last_it = it.copy()
         while it.forward_line():
             # last_it is now on a fully-loaded line, so we can check it
-            if last_it.get_chars_in_line() > LINE_LENGTH_LIMIT:
+            if not self.force_load and last_it.get_chars_in_line() > LINE_LENGTH_LIMIT:
                 failed_it = last_it
                 break
             last_it.assign(it)
 
         # We also have to check the last line in the file, which would
         # otherwise be skipped by the above logic.
-        if (current_bytes == total_bytes) and (
-            it.get_chars_in_line() > LINE_LENGTH_LIMIT
+        if (
+            not self.force_load
+            and current_bytes == total_bytes
+            and it.get_chars_in_line() > LINE_LENGTH_LIMIT
         ):
             failed_it = it
 
@@ -1718,7 +1723,9 @@ class FileDiff(Gtk.Box, MeldDoc):
                 FileLoadError.LINE_TOO_LONG,
                 _(
                     "Line {line_number} exceeded maximum line length "
-                    "({line_length} > {LINE_LENGTH_LIMIT})"
+                    "({line_length} > {LINE_LENGTH_LIMIT}).\n\n"
+                    "Loading files with very long lines may make Meld slow or "
+                    "unresponsive."
                 ).format(
                     line_number=failed_it.get_line() + 1,
                     line_length=failed_it.get_chars_in_line(),
@@ -1770,10 +1777,15 @@ class FileDiff(Gtk.Box, MeldDoc):
             if errors.get(pane):
                 error, error_text = errors[pane]
             else:
+                error = None
                 error_text = err.message
-            self.msgarea_mgr[pane].add_dismissable_msg(
-                "dialog-error-symbolic", primary, error_text
-            )
+
+            if error == FileLoadError.LINE_TOO_LONG:
+                self._prompt_load_long_lines(pane, primary, error_text)
+            else:
+                self.msgarea_mgr[pane].add_dismissable_msg(
+                    "dialog-error-symbolic", primary, error_text
+                )
             buf.data.state = MeldBufferState.LOAD_ERROR
 
         start, end = buf.get_bounds()
@@ -1841,8 +1853,12 @@ class FileDiff(Gtk.Box, MeldDoc):
             for buf in self.textbuffer:
                 buf.place_cursor(buf.get_start_iter())
 
-            chunk, prev, next_ = self.linediffer.locate_chunk(1, 0)
-            target_chunk = chunk if chunk is not None else next_
+            if self.linediffer.conflicts:
+                target_chunk = self.linediffer.conflicts[0]
+            else:
+                chunk, prev, next_ = self.linediffer.locate_chunk(1, 0)
+                target_chunk = chunk if chunk is not None else next_
+
             if target_chunk is not None:
                 self.scheduler.add_task(
                     lambda: self.go_to_chunk(target_chunk, centered=True), True
@@ -1954,7 +1970,7 @@ class FileDiff(Gtk.Box, MeldDoc):
         # re-highlight added and modified chunks.
         need_clearing = sorted(list(removed_chunks), key=merged_chunk_order)
         need_highlighting = sorted(
-            list(added_chunks) + [modified_chunks], key=merged_chunk_order
+            [*list(added_chunks), modified_chunks], key=merged_chunk_order
         )
 
         alltags = [b.get_tag_table().lookup("inline") for b in self.textbuffer]
@@ -2188,6 +2204,28 @@ class FileDiff(Gtk.Box, MeldDoc):
             if index == 0:
                 button.props.label = _("_Keep highlighting")
             msgarea.connect("response", on_msgarea_highlighting_response)
+
+    def _prompt_load_long_lines(self, pane, primary, secondary):
+        # Rather than failing outright on very long lines, offer the user
+        # the chance to load the files anyway.
+        def on_load_anyway_response(msgarea, respid):
+            for mgr in self.msgarea_mgr:
+                mgr.clear()
+            if respid == Gtk.ResponseType.OK:
+                self.force_load = True
+                buffers = self.textbuffer[: self.num_panes]
+                gfiles = [b.data.gfile for b in buffers]
+                encodings = [b.data.encoding for b in buffers]
+                self.set_files(gfiles, encodings=encodings)
+
+        mgr = self.msgarea_mgr[pane]
+        msgarea = mgr.new_from_text_and_icon(
+            primary, secondary, "dialog-warning-symbolic"
+        )
+        mgr.set_msg_id(FileDiff.MSG_LINE_TOO_LONG)
+        msgarea.add_button(_("Hi_de"), Gtk.ResponseType.CLOSE)
+        msgarea.add_button(_("_Load anyway"), Gtk.ResponseType.OK)
+        msgarea.connect("response", on_load_anyway_response)
 
     def on_msgarea_identical_response(self, msgarea, respid):
         for mgr in self.msgarea_mgr:

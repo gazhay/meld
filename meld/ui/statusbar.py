@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import ClassVar
+
 from gi.repository import GObject, Gtk, GtkSource, Pango
 
 from meld.conf import _
@@ -78,7 +80,7 @@ MeldStatusMenuButton.set_css_name("meld-status-menu-button")
 class MeldStatusBar(Gtk.Box):
     __gtype_name__ = "MeldStatusBar"
 
-    __gsignals__ = {
+    __gsignals__: ClassVar[dict] = {
         "start-go-to-line": (GObject.SignalFlags.ACTION, None, tuple()),
         "go-to-line": (GObject.SignalFlags.RUN_FIRST, None, (int,)),
         "encoding-changed": (
@@ -187,7 +189,7 @@ class MeldStatusBar(Gtk.Box):
             GObject.BindingFlags.DEFAULT,
             format_cursor_position,
         )
-        self.connect("start-go-to-line", lambda *args: button.clicked())
+        self.connect("start-go-to-line", lambda *args: button.popup())
         button.set_popover(pop)
         # Set a label width to avoid other widgets moving on cursor change
         reasonable_width = len(format_cursor_position(None, (1000, 100))) - 2

@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
-from typing import NamedTuple, Sequence
+from typing import ClassVar, NamedTuple, Sequence
 
 from gi.repository import GObject
 
@@ -185,7 +185,7 @@ def mark_conflict_markers(
 class Differ(GObject.GObject):
     """Utility class to hold diff2 or diff3 chunks"""
 
-    __gsignals__ = {
+    __gsignals__: ClassVar[dict] = {
         "diffs-changed": (GObject.SignalFlags.RUN_FIRST, None, (object,)),
     }
 

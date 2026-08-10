@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Kai Willadsen <kai.willadsen@gmail.com>
+# Copyright (C) 2019-2026 Kai Willadsen <kai.willadsen@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 
 import collections
 import logging
-from typing import Any, List, Mapping, Tuple
+from typing import Any, ClassVar, List, Mapping, Tuple
 
 import cairo
 from gi.repository import Gdk, GObject, Gtk
@@ -120,10 +120,10 @@ class ChunkMap(Gtk.DrawingArea):
             base = make_gdk_rgba(1.0, 1.0, 1.0, 1.0)
         text_set, text = stylecontext.lookup_color("theme_text_color")
         if not text_set:
-            base = make_gdk_rgba(0.0, 0.0, 0.0, 1.0)
+            text = make_gdk_rgba(0.0, 0.0, 0.0, 1.0)
         border_set, border = stylecontext.lookup_color("borders")
         if not border_set:
-            base = make_gdk_rgba(0.95, 0.95, 0.95, 1.0)
+            border = make_gdk_rgba(0.95, 0.95, 0.95, 1.0)
 
         handle_overdraw = text.copy()
         handle_overdraw.alpha = self.handle_overdraw_alpha
@@ -357,7 +357,7 @@ class TreeViewChunkMap(ChunkMap):
         flags=(GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY),
     )
 
-    chunk_type_map = {
+    chunk_type_map: ClassVar[dict] = {
         STATE_NEW: "insert",
         STATE_ERROR: "error",
         STATE_MODIFIED: "replace",
