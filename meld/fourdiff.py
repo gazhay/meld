@@ -32,6 +32,8 @@ log = logging.getLogger(__name__)
 
 FWD_TO_ACTIVE_ACTIONS = [
     "add-sync-point",
+    "move-sync-point",
+    "match-sync-point",
     "remove-sync-point",
     "clear-sync-point",
     "copy",
@@ -56,11 +58,13 @@ FWD_TO_ACTIVE_ACTIONS = [
     "merge-all-right",
     "merge-all",
     "next-change",
+    "next-change-shortcut",
     "next-pane",
     "open-external",
     "open-folder",
     "paste",
     "previous-change",
+    "previous-change-shortcut",
     "previous-pane",
     "redo",
     "undo",
@@ -241,14 +245,25 @@ def wrap_widget_with(widget, container):
     """Wrap widget inside container, preserving its position in a Gtk.Box"""
     box = widget.get_parent()
     assert isinstance(box, Gtk.Box)
-    # There's no direct way to query the position of widget in box.
-    # In our case, it's the last one. So just assert it.
-    assert box.get_children()[-1] is widget
-    expand, fill, padding, pack_type = box.query_child_packing(widget)
-    assert pack_type == Gtk.PackType.START
+    assert widget.get_next_sibling() is None, "Expecting widget to be the last child"
     box.remove(widget)
-    container.add(widget)
-    box.pack_start(container, expand=expand, fill=fill, padding=padding)
+    container.set_child(widget)
+    container.set_hexpand(widget.get_hexpand())
+    container.set_halign(widget.get_halign())
+    box.append(container)
+
+
+class TrackedBox(Gtk.Box):
+    """A Gtk.Box with a size-allocate signal"""
+
+    __gtype_name__ = "TrackedBox"
+
+    @GObject.Signal(name="size-allocate", arg_types=(int, int, int))
+    def size_allocate(self, width: int, height: int, baseline: int) -> None: ...
+
+    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
+        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        self.emit("size-allocate", width, height, baseline)
 
 
 class FourDiff(Gtk.Overlay, MeldDoc):
@@ -356,11 +371,13 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # 1. self.hbox, containing diff0 and diff2
         # 2. self.diff1
         # 3. self.cover, which is always below diff1, just to hide hbox.
-        self.hbox = Gtk.Box(Gtk.Orientation.HORIZONTAL)
+        self.hbox = TrackedBox(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox.show()
         self.hbox.set_homogeneous(True)
-        self.hbox.pack_start(self.diff0, expand=True, fill=True, padding=0)
-        self.hbox.pack_start(self.diff2, expand=True, fill=True, padding=0)
+        for diff in [self.diff0, self.diff2]:
+            diff.set_hexpand(True)
+            diff.set_halign(Gtk.Align.FILL)
+            self.hbox.append(diff)
         self.hbox.connect("size-allocate", self.on_hbox_size_allocate)
         self.add_overlay(self.hbox)
 
@@ -374,7 +391,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # We put diff1 inside ShrinkingBin, so it will only get its minimum width
         self.shrinking_bin = ShrinkingBin()
         self.shrinking_bin.show()
-        self.shrinking_bin.add(self.diff1)
+        self.shrinking_bin.set_child(self.diff1)
         self.shrinking_bin.set_halign(Gtk.Align.START)
         self.add_overlay(self.shrinking_bin)
 
@@ -384,16 +401,20 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.active_diff_i = 2
         self.active_diff = self.diffs[self.active_diff_i]
         # Start with showing 2 diffs
-        self.reorder_overlay(self.hbox, -1)
+        self.move_to_top(self.hbox)
         self.is_showing_2_diffs = True
         self.active_diff_i_when_showing_2_diffs = 2
 
         for diff_i in [0, 2]:
             for tv in self.diffs[diff_i].textview:
-                tv.connect("focus-in-event", self.on_textview_focus_in_event, diff_i)
+                focus_controller = Gtk.EventControllerFocus()
+                tv.add_controller(focus_controller)
+                focus_controller.connect(
+                    "enter", self.on_textview_focus_in_event, diff_i
+                )
 
         for diff in self.diffs:
-            diff.tab_title.connect("value-changed", self.on_diff_label_changed)
+            diff.connect("notify::tab-title", self.on_diff_label_changed)
 
         meld_settings = get_meld_settings()
         self.settings_handlers = [
@@ -471,13 +492,17 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         builder.get_object("fourdiff_swap_remote_and_local_button").set_visible(True)
         builder.get_object("fourdiff_toggle_view_button").set_visible(True)
 
-    def on_diff0_scrolledwindow0_size_allocate(self, _widget, allocation):
+    def on_diff0_scrolledwindow0_size_allocate(
+        self, _widget, width, _height, _baseline
+    ):
         # Make diff1.scrolledwindow0 get the same size as diff0.scrolledwindow0
-        self.exact0.set_size_request(allocation.width, -1)
+        self.exact0.set_size_request(width, -1)
 
-    def on_diff2_scrolledwindow0_size_allocate(self, _widget, allocation):
+    def on_diff2_scrolledwindow0_size_allocate(
+        self, _widget, width, _height, _baseline
+    ):
         # Make diff1.scrolledwindow1 get the same size as diff2.scrolledwindow0
-        self.exact1.set_size_request(allocation.width, -1)
+        self.exact1.set_size_request(width, -1)
 
     def set_diff1_linkmap0_width_request(self):
         # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the
@@ -495,10 +520,10 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         ag1_width = self.diff1.actiongutter1.get_size_request().width
         self.diff1.linkmap0.set_size_request(x_dist - ag1_width, -1)
 
-    def on_hbox_size_allocate(self, _widget, _allocation):
+    def on_hbox_size_allocate(self, _widget, _width, _height, _baseline):
         self.set_diff1_linkmap0_width_request()
 
-    def on_diff1_size_allocate(self, _widget, _allocation):
+    def on_diff1_size_allocate(self, _widget, _width, _height, _baseline):
         self.set_diff1_linkmap0_width_request()
 
     def on_fwd_to_active_action_activate(self, action, user_data):
@@ -545,7 +570,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                     diff_view_action_group.lookup(name).get_enabled()
                 )
 
-    def on_textview_focus_in_event(self, _textbuffer, _event, diff_i):
+    def on_textview_focus_in_event(self, _widget, diff_i):
         self.active_diff_i_when_showing_2_diffs = diff_i
         self._update_active_diff()
 
@@ -619,13 +644,17 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                     adj0.connect(event, self._on_adj_changed, adj1)
                     adj1.connect(event, self._on_adj_changed, adj0)
 
+    def move_to_top(self, widget):
+        self.remove_overlay(widget)
+        self.add_overlay(widget)
+
     def action_toggle_view(self, _action, _value):
         self.is_showing_2_diffs = not self.is_showing_2_diffs
         if self.is_showing_2_diffs:
-            self.reorder_overlay(self.hbox, -1)
+            self.move_to_top(self.hbox)
         else:
-            self.reorder_overlay(self.cover, -1)
-            self.reorder_overlay(self.shrinking_bin, -1)
+            self.move_to_top(self.cover)
+            self.move_to_top(self.shrinking_bin)
         self._update_active_diff()
 
     def action_swap_remote_and_local(self, _action, _value):
