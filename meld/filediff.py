@@ -123,6 +123,19 @@ class CursorDetails:
             setattr(self, var, None)
 
 
+class TrackedScrolledWindow(Gtk.ScrolledWindow):
+    """A Gtk.ScrolledWindow with a size-allocated signal"""
+
+    __gtype_name__ = "TrackedScrolledWindow"
+
+    @GObject.Signal(name="size-allocated", arg_types=(int, int, int))
+    def size_allocated(self, width: int, height: int, baseline: int) -> None: ...
+
+    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
+        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
+        self.emit("size-allocated", width, height, baseline)
+
+
 @Gtk.Template(resource_path="/org/gnome/meld/ui/filediff.ui")
 class FileDiff(Gtk.Box, MeldDoc):
     """Two or three way comparison of text files"""
