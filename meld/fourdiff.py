@@ -189,6 +189,7 @@ class ExactSizeBin(Gtk.Widget):
 
     def __init__(self, child=None, **kwargs):
         super().__init__(**kwargs)
+        self.set_overflow(Gtk.Overflow.HIDDEN)
         self._child = None
         if child:
             self.set_child(child)
@@ -211,6 +212,8 @@ class ExactSizeBin(Gtk.Widget):
         if orientation == Gtk.Orientation.HORIZONTAL:
             if req_width != -1:
                 min_size = nat_size = req_width
+            # Without manually setting baseline to -1 in horizontal, we get warnings.
+            min_baseline = nat_baseline = -1
         elif orientation == Gtk.Orientation.VERTICAL:
             if req_height != -1:
                 min_size = nat_size = req_height
@@ -218,8 +221,8 @@ class ExactSizeBin(Gtk.Widget):
             assert False, "Unexpected orientation"
         return min_size, nat_size, min_baseline, nat_baseline
 
-    def do_size_allocate(self, alloc: Gdk.Rectangle):
-        Gtk.Widget.do_size_allocate(self, alloc)
+    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
+        Gtk.Widget.do_size_allocate(self, width, height, baseline)
 
         child = self._child
         if not child or not child.get_visible():
@@ -227,12 +230,11 @@ class ExactSizeBin(Gtk.Widget):
 
         req_width, req_height = self.get_size_request()
         child_alloc = Gdk.Rectangle()
-        child_alloc.x = alloc.x
-        child_alloc.y = alloc.y
-        child_alloc.width = req_width if req_width != -1 else alloc.width
-        child_alloc.height = req_height if req_height != -1 else alloc.height
-        child.size_allocate(child_alloc)
-        child.set_clip(alloc)
+        child_alloc.x = 0
+        child_alloc.y = 0
+        child_alloc.width = req_width if req_width != -1 else width
+        child_alloc.height = req_height if req_height != -1 else height
+        child.size_allocate(child_alloc, baseline)
 
     def do_dispose(self):
         if self._child:
@@ -341,7 +343,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # Init diff0, diff1, and diff2
         self.diff0 = FileDiff(2)
         self.diff0.scrolledwindow0.connect(
-            "size-allocate", self.on_diff0_scrolledwindow0_size_allocate
+            "tracked-size-allocate", self.on_diff0_scrolledwindow0_size_allocate
         )
         self.scheduler.add_scheduler(self.diff0.scheduler)
 
@@ -357,7 +359,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         self.diff2 = FileDiff(2, mark_pane1_conflict_markers=True)
         self.diff2.scrolledwindow0.connect(
-            "size-allocate", self.on_diff2_scrolledwindow0_size_allocate
+            "tracked-size-allocate", self.on_diff2_scrolledwindow0_size_allocate
         )
         self.scheduler.add_scheduler(self.diff2.scheduler)
         self.undosequence = self.diff2.undosequence
