@@ -647,8 +647,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                     adj1.connect(event, self._on_adj_changed, adj0)
 
     def move_to_top(self, widget):
-        self.remove_overlay(widget)
-        self.add_overlay(widget)
+        widget.insert_before(self, None)
 
     def action_toggle_view(self, _action, _value):
         self.is_showing_2_diffs = not self.is_showing_2_diffs
