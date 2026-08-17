@@ -5,7 +5,6 @@
     <glade-widget-classes>
         <glade-widget-class title="ActionGutter" name="ActionGutter" generic-name="actiongutter"/>
         <glade-widget-class title="LinkMap" name="LinkMap" generic-name="linkmap"/>
-        <glade-widget-class title="TrackedScrolledWindow" name="TrackedScrolledWindow" generic-name="trackedscrolledwindow"/>
         <glade-widget-class title="MeldSourceView" name="MeldSourceView" generic-name="meldsourceview"/>
         <glade-widget-class title="MeldStatusBar" name="MeldStatusBar" generic-name="meldstatusbar"/>
         <glade-widget-class title="MsgAreaController" name="MsgAreaController" generic-name="msgareacontroller"/>
@@ -16,7 +15,6 @@
     <glade-widget-group name="meld" title="Meld">
         <glade-widget-class-ref name="LinkMap"/>
         <glade-widget-class-ref name="ActionGutter"/>
-        <glade-widget-class-ref name="TrackedScrolledWindow"/>
         <glade-widget-class-ref name="MeldSourceView"/>
         <glade-widget-class-ref name="MsgAreaController"/>
         <glade-widget-class-ref name="MeldStatusBar"/>

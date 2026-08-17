@@ -193,7 +193,7 @@
               <object class="MsgAreaController" id="msgarea_mgr0"/>
             </child>
             <child>
-              <object class="TrackedScrolledWindow" id="scrolledwindow0">
+              <object class="GtkScrolledWindow" id="scrolledwindow0">
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="vadjustment">pane_adjustment0</property>
@@ -238,7 +238,7 @@
               <object class="MsgAreaController" id="msgarea_mgr2"/>
             </child>
             <child>
-              <object class="TrackedScrolledWindow" id="scrolledwindow2">
+              <object class="GtkScrolledWindow" id="scrolledwindow2">
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="vadjustment">pane_adjustment2</property>
@@ -283,7 +283,7 @@
               <object class="MsgAreaController" id="msgarea_mgr1"/>
             </child>
             <child>
-              <object class="TrackedScrolledWindow" id="scrolledwindow1">
+              <object class="GtkScrolledWindow" id="scrolledwindow1">
                 <property name="hexpand">True</property>
                 <property name="vexpand">True</property>
                 <property name="vadjustment">pane_adjustment1</property>

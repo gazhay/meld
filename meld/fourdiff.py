@@ -143,24 +143,8 @@ class ShrinkingBin(Gtk.Widget):
     A widget which reports its preferred width to be the minimum width of its child
     """
 
-    def __init__(self, child=None, **kwargs):
-        super().__init__(**kwargs)
-        self._child = None
-        if child:
-            self.set_child(child)
-
-    def set_child(self, child):
-        if self._child:
-            self._child.unparent()
-        self._child = child
-        if child:
-            child.set_parent(self)
-
-    def get_child(self):
-        return self._child
-
     def do_measure(self, orientation, for_size):
-        child = self._child
+        child = self.get_first_child()
         if not child or not child.get_visible():
             return (0, 0, -1, -1)
         min_size, nat_size, min_baseline, nat_baseline = child.measure(
@@ -172,100 +156,82 @@ class ShrinkingBin(Gtk.Widget):
             return (min_size, nat_size, min_baseline, nat_baseline)
 
     def do_size_allocate(self, width, height, baseline):
-        if self._child and self._child.get_visible():
-            self._child.allocate(width, height, baseline, None)
+        child = self.get_first_child()
+        if child and child.get_visible():
+            alloc = Gdk.Rectangle()
+            alloc.width = width
+            alloc.height = height
+            child.size_allocate(alloc, baseline)
 
     def do_dispose(self):
-        if self._child:
-            self._child.unparent()
-            self._child = None
+        child = self.get_first_child()
+        if child:
+            child.unparent()
         Gtk.Widget.do_dispose(self)
 
 
-class ExactSizeBin(Gtk.Widget):
+class ExactWidthBin(Gtk.Widget):
     """
-    A widget which allocates its exact size request to its child
+    A widget which allocates its exact width request to its child
     """
-
-    def __init__(self, child=None, **kwargs):
-        super().__init__(**kwargs)
-        self.set_overflow(Gtk.Overflow.HIDDEN)
-        self._child = None
-        if child:
-            self.set_child(child)
-
-    def set_child(self, child):
-        if self._child:
-            self._child.unparent()
-        self._child = child
-        if child:
-            child.set_parent(self)
-
-    def get_child(self):
-        return self._child
 
     def do_measure(self, orientation, for_size):
-        req_width, req_height = self.get_size_request()
-        min_size, nat_size, min_baseline, nat_baseline = Gtk.Widget.do_measure(
-            self, orientation, for_size
+        child = self.get_first_child()
+        if child is None or not child.get_visible():
+            return 0, 0, -1, -1
+
+        req_width, _req_height = self.get_size_request()
+        if orientation == Gtk.Orientation.VERTICAL and req_width != -1:
+            for_size = req_width
+        min_size, nat_size, min_baseline, nat_baseline = child.measure(
+            orientation, for_size
         )
-        if orientation == Gtk.Orientation.HORIZONTAL:
-            if req_width != -1:
-                min_size = nat_size = req_width
-            # Without manually setting baseline to -1 in horizontal, we get warnings.
-            min_baseline = nat_baseline = -1
-        elif orientation == Gtk.Orientation.VERTICAL:
-            if req_height != -1:
-                min_size = nat_size = req_height
+        if orientation == Gtk.Orientation.HORIZONTAL and req_width != -1:
+            return req_width, req_width, -1, -1
         else:
-            assert False, "Unexpected orientation"
-        return min_size, nat_size, min_baseline, nat_baseline
+            return min_size, nat_size, min_baseline, nat_baseline
 
     def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
-        Gtk.Widget.do_size_allocate(self, width, height, baseline)
+        child = self.get_first_child()
+        if child and child.get_visible():
+            req_width, _req_height = self.get_size_request()
+            if req_width != -1:
+                width = req_width
+            alloc = Gdk.Rectangle()
+            alloc.width = width
+            alloc.height = height
+            child.size_allocate(alloc, baseline)
 
-        child = self._child
-        if not child or not child.get_visible():
-            return
-
-        req_width, req_height = self.get_size_request()
-        child_alloc = Gdk.Rectangle()
-        child_alloc.x = 0
-        child_alloc.y = 0
-        child_alloc.width = req_width if req_width != -1 else width
-        child_alloc.height = req_height if req_height != -1 else height
-        child.size_allocate(child_alloc, baseline)
+    def do_get_request_mode(self):
+        return Gtk.SizeRequestMode.CONSTANT_SIZE
 
     def do_dispose(self):
-        if self._child:
-            self._child.unparent()
-            self._child = None
+        child = self.get_first_child()
+        if child:
+            child.unparent()
         Gtk.Widget.do_dispose(self)
 
 
-def wrap_widget_with(widget, container):
-    """Wrap widget inside container, preserving its position in a Gtk.Box"""
+def _wrap_with_exact_width_bin(widget: Gtk.Widget) -> Gtk.Widget:
+    assert widget.get_layout_manager() is None
     box = widget.get_parent()
     assert isinstance(box, Gtk.Box)
     assert widget.get_next_sibling() is None, "Expecting widget to be the last child"
+    assert widget.get_vexpand()
     box.remove(widget)
-    container.set_child(widget)
-    container.set_hexpand(widget.get_hexpand())
-    container.set_halign(widget.get_halign())
-    box.append(container)
+    exact = ExactWidthBin()
+    widget.set_parent(exact)
+    exact.set_vexpand(True)
+    box.append(exact)
+    return exact
 
 
-class TrackedBox(Gtk.Box):
-    """A Gtk.Box with a size-allocate signal"""
+class TrackedOverlayLayout(Gtk.OverlayLayout):
+    """Used below to get notified when FourDiff gets a size allocation"""
 
-    __gtype_name__ = "TrackedBox"
-
-    @GObject.Signal(name="size-allocate", arg_types=(int, int, int))
-    def size_allocate(self, width: int, height: int, baseline: int) -> None: ...
-
-    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
-        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
-        self.emit("size-allocate", width, height, baseline)
+    def do_allocate(self, widget, width, height, baseline):
+        Gtk.OverlayLayout.do_allocate(self, widget, width, height, baseline)
+        widget.on_tracked_size_allocate(width, height, baseline)
 
 
 class FourDiff(Gtk.Overlay, MeldDoc):
@@ -340,27 +306,19 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         MeldDoc.__init__(self)
         bind_settings(self)
 
+        assert isinstance(self.get_layout_manager(), Gtk.OverlayLayout)
+        self.set_layout_manager(TrackedOverlayLayout())
+
         # Init diff0, diff1, and diff2
         self.diff0 = FileDiff(2)
-        self.diff0.scrolledwindow0.connect(
-            "tracked-size-allocate", self.on_diff0_scrolledwindow0_size_allocate
-        )
         self.scheduler.add_scheduler(self.diff0.scheduler)
 
         self.diff1 = FileDiff(2)
-        self.diff1.connect("size-allocate", self.on_diff1_size_allocate)
-        self.exact0 = ExactSizeBin()
-        self.exact0.show()
-        wrap_widget_with(self.diff1.scrolledwindow0, self.exact0)
-        self.exact1 = ExactSizeBin()
-        self.exact1.show()
-        wrap_widget_with(self.diff1.scrolledwindow1, self.exact1)
+        self.exact0 = _wrap_with_exact_width_bin(self.diff1.scrolledwindow0)
+        self.exact1 = _wrap_with_exact_width_bin(self.diff1.scrolledwindow1)
         self.scheduler.add_scheduler(self.diff1.scheduler)
 
         self.diff2 = FileDiff(2, mark_pane1_conflict_markers=True)
-        self.diff2.scrolledwindow0.connect(
-            "tracked-size-allocate", self.on_diff2_scrolledwindow0_size_allocate
-        )
         self.scheduler.add_scheduler(self.diff2.scheduler)
         self.undosequence = self.diff2.undosequence
 
@@ -373,14 +331,13 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # 1. self.hbox, containing diff0 and diff2
         # 2. self.diff1
         # 3. self.cover, which is always below diff1, just to hide hbox.
-        self.hbox = TrackedBox(orientation=Gtk.Orientation.HORIZONTAL)
+        self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         self.hbox.show()
         self.hbox.set_homogeneous(True)
         for diff in [self.diff0, self.diff2]:
             diff.set_hexpand(True)
             diff.set_halign(Gtk.Align.FILL)
             self.hbox.append(diff)
-        self.hbox.connect("size-allocate", self.on_hbox_size_allocate)
         self.add_overlay(self.hbox)
 
         # self.cover is shown beneath diff1, to hide hbox0.
@@ -392,8 +349,7 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         # We put diff1 inside ShrinkingBin, so it will only get its minimum width
         self.shrinking_bin = ShrinkingBin()
-        self.shrinking_bin.show()
-        self.shrinking_bin.set_child(self.diff1)
+        self.diff1.set_parent(self.shrinking_bin)
         self.shrinking_bin.set_halign(Gtk.Align.START)
         self.add_overlay(self.shrinking_bin)
 
@@ -494,18 +450,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         builder.get_object("fourdiff_swap_remote_and_local_button").set_visible(True)
         builder.get_object("fourdiff_toggle_view_button").set_visible(True)
 
-    def on_diff0_scrolledwindow0_size_allocate(
-        self, _widget, width, _height, _baseline
-    ):
-        # Make diff1.scrolledwindow0 get the same size as diff0.scrolledwindow0
-        self.exact0.set_size_request(width, -1)
-
-    def on_diff2_scrolledwindow0_size_allocate(
-        self, _widget, width, _height, _baseline
-    ):
-        # Make diff1.scrolledwindow1 get the same size as diff2.scrolledwindow0
-        self.exact1.set_size_request(width, -1)
-
     def set_diff1_linkmap0_width_request(self):
         # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the
         # same position as diff2.scrolledwindow0.
@@ -520,13 +464,13 @@ class FourDiff(Gtk.Overlay, MeldDoc):
             return
         x_dist, _y_dist = xy_or_none
         ag1_width = self.diff1.actiongutter1.get_size_request().width
-        self.diff1.linkmap0.set_size_request(x_dist - ag1_width, -1)
+        req_width = x_dist - ag1_width
+        self.diff1.linkmap0.set_size_request(max(req_width, -1), -1)
 
-    def on_hbox_size_allocate(self, _widget, _width, _height, _baseline):
+    def on_tracked_size_allocate(self, width: int, height: int, baseline: int) -> None:
         self.set_diff1_linkmap0_width_request()
-
-    def on_diff1_size_allocate(self, _widget, _width, _height, _baseline):
-        self.set_diff1_linkmap0_width_request()
+        self.exact0.set_size_request(self.diff0.scrolledwindow0.get_width(), -1)
+        self.exact1.set_size_request(self.diff2.scrolledwindow0.get_width(), -1)
 
     def on_fwd_to_active_action_activate(self, action, user_data):
         self.active_diff.view_action_group.activate_action(action.get_name(), user_data)

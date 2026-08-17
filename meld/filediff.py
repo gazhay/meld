@@ -123,19 +123,6 @@ class CursorDetails:
             setattr(self, var, None)
 
 
-class TrackedScrolledWindow(Gtk.ScrolledWindow):
-    """A Gtk.ScrolledWindow with a size-allocate signal"""
-
-    __gtype_name__ = "TrackedScrolledWindow"
-
-    @GObject.Signal(name="tracked-size-allocate", arg_types=(int, int, int))
-    def tracked_size_allocate(self, width: int, height: int, baseline: int) -> None: ...
-
-    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
-        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
-        self.emit("tracked-size-allocate", width, height, baseline)
-
-
 @Gtk.Template(resource_path="/org/gnome/meld/ui/filediff.ui")
 class FileDiff(Gtk.Box, MeldDoc):
     """Two or three way comparison of text files"""
@@ -146,13 +133,6 @@ class FileDiff(Gtk.Box, MeldDoc):
     create_diff_signal = MeldDoc.create_diff_signal
     file_changed_signal = MeldDoc.file_changed_signal
     tab_state_changed = MeldDoc.tab_state_changed
-
-    @GObject.Signal(name="size-allocate", arg_types=(int, int, int))
-    def size_allocate(self, width: int, height: int, baseline: int) -> None: ...
-
-    def do_size_allocate(self, width: int, height: int, baseline: int) -> None:
-        Gtk.ScrolledWindow.do_size_allocate(self, width, height, baseline)
-        self.emit("size-allocate", width, height, baseline)
 
     __gsettings_bindings_view__ = (
         ("ignore-blank-lines", "ignore-blank-lines"),
