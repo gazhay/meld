@@ -591,6 +591,8 @@ class FourDiff(Gtk.Overlay, MeldDoc):
                     adj1.connect(event, self._on_adj_changed, adj0)
 
     def move_to_top(self, widget):
+        """Move widget to the top of the overlay, putting self.cover beneath it"""
+        self.cover.insert_before(self, None)
         widget.insert_before(self, None)
 
     def action_toggle_view(self, _action, _value):
@@ -598,7 +600,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         if self.is_showing_2_diffs:
             self.move_to_top(self.hbox)
         else:
-            self.move_to_top(self.cover)
             self.move_to_top(self.shrinking_bin)
         self._update_active_diff()
 
