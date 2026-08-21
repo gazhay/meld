@@ -332,7 +332,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # 2. self.diff1
         # 3. self.cover, which is always below diff1, just to hide hbox.
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        self.hbox.show()
         self.hbox.set_homogeneous(True)
         for diff in [self.diff0, self.diff2]:
             diff.set_hexpand(True)
@@ -343,7 +342,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # self.cover is shown beneath diff1, to hide hbox0.
         # The "background" style causes it to be opaque rather than transparent.
         self.cover = Gtk.Box()
-        self.cover.show()
         self.cover.get_style_context().add_class("background")
         self.add_overlay(self.cover)
 
@@ -385,8 +383,6 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.view_action_group.add_action(text_filter_action)
 
         self._init_actions()
-
-        self.show()
 
         self.files = None
 
