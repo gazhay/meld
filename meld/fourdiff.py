@@ -313,15 +313,18 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         # Init diff0, diff1, and diff2
         self.diff0 = FileDiff(2)
         self.scheduler.add_scheduler(self.diff0.scheduler)
+        self.diff0.connect("close", self.on_diff0_close)
 
         self.diff1 = FileDiff(2)
         self.exact0 = _wrap_with_exact_width_bin(self.diff1.scrolledwindow0)
         self.exact1 = _wrap_with_exact_width_bin(self.diff1.scrolledwindow1)
         self.scheduler.add_scheduler(self.diff1.scheduler)
+        self.diff1.connect("close", self.on_diff1_close)
 
         self.diff2 = FileDiff(2, mark_pane1_conflict_markers=True)
         self.scheduler.add_scheduler(self.diff2.scheduler)
         self.undosequence = self.diff2.undosequence
+        self.diff2.connect("close", self.on_diff2_close)
 
         self.diffs = [self.diff0, self.diff1, self.diff2]
 
@@ -676,44 +679,38 @@ class FourDiff(Gtk.Overlay, MeldDoc):
             action.set_enabled(filt.filter is not None)
             self.view_action_group.add_action(action)
 
-    def on_delete_event(self):
-        buf = self.diff2.textbuffer[1]
-        text = buf.get_text(
-            buf.get_start_iter(), buf.get_end_iter(), include_hidden_chars=True
+    def request_close(self):
+        if not self.diff2.linediffer.conflicts:
+            self.request_close_cb(None, "close", None)
+            return
+
+        builder = Gtk.Builder.new_from_resource(
+            "/org/gnome/meld/ui/close-with-conflicts-confirm-dialog.ui"
         )
-        if "<<<<<<<" in text or ">>>>>>>>" in text:
-            response = misc.modal_dialog(
-                primary=_("Close with conflict markers?"),
-                secondary=_(
-                    "There are conflict markers remaining. Are you sure you want to"
-                    " close?"
-                ),
-                buttons=[
-                    (_("_Cancel"), Gtk.ResponseType.CANCEL, None),
-                    (
-                        _("Close with conflict markers"),
-                        Gtk.ResponseType.OK,
-                        Gtk.STYLE_CLASS_WARNING,
-                    ),
-                ],
-                messagetype=Gtk.MessageType.WARNING,
-            )
-            if response != Gtk.ResponseType.OK:
-                return Gtk.ResponseType.CANCEL
+        dialog = builder.get_object("close-with-conflicts-confirm-dialog")
+        dialog.choose(self.get_root(), None, self.request_close_cb, None)
+
+    def request_close_cb(self, dialog, response, user_data):
+        assert user_data is None
+        if not isinstance(response, str):
+            response = dialog.choose_finish(response)
+
+        if response == "cancel":
+            return
+
+        assert response == "close"
 
         # We start with diff 2, since it contains the editable buffer and
-        # the user may decide to abort closing
-        response = self.diff2.on_delete_event()
-        if response == Gtk.ResponseType.CANCEL:
-            return response
+        # the user may decide to abort closing.
+        # This will call diff0.request_close(), which will call diff1.request_close(),
+        # which will call self.on_diff1_close().
+        self.diff2.request_close()
 
-        for diff in self.diffs[:2]:
-            response = diff.on_delete_event()
-            assert response == Gtk.ResponseType.OK
+    def on_diff2_close(self, _widget, _exit_code):
+        self.diff0.request_close()
 
-        meld_settings = get_meld_settings()
-        for h in self.settings_handlers:
-            meld_settings.disconnect(h)
+    def on_diff0_close(self, _widget, _exit_code):
+        self.diff1.request_close()
 
-        self.emit("close", 0)
-        return Gtk.ResponseType.OK
+    def on_diff1_close(self, _widget, _exit_code):
+        super().request_close()

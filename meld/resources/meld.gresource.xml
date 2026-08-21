@@ -20,6 +20,7 @@
     <file preprocess="xml-stripblanks">icons/scalable/emblems/emblem-new.svg</file>
     <file>style.css</file>
     <file>ui/appwindow.ui</file>
+    <file>ui/close-with-conflicts-confirm-dialog.ui</file>
     <file>ui/column-list.ui</file>
     <file>ui/commit-dialog.ui</file>
     <file>ui/dirdiff-actions.ui</file>
