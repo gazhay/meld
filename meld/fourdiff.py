@@ -385,7 +385,13 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         self._init_actions()
 
+        # We want to link the local-view properties, since they are already linked
+        # between the textviews in a single filediff.
         self._link_view_actions()
+        # Meld allows choosing a different highlighting language for each textview.
+        # When there are 4, this becomes really cumbersome. So we just link them all,
+        # since most of the time the user will want the same language for all.
+        self._link_source_language()
 
         self.files = None
 
@@ -465,6 +471,18 @@ class FourDiff(Gtk.Overlay, MeldDoc):
             prop_action_group.add_action(action)
         for diff in self.diffs:
             diff.insert_action_group("view-local", prop_action_group)
+
+    def _link_source_language(self):
+        """Link the syntax highlighting language of all textviews"""
+        bufs = [buf for diff in self.diffs for buf in diff.textbuffer]
+        hub, *rest = bufs
+        for buf in rest:
+            hub.bind_property(
+                "language",
+                buf,
+                "language",
+                GObject.BindingFlags.BIDIRECTIONAL | GObject.BindingFlags.SYNC_CREATE,
+            )
 
     def set_diff1_linkmap0_width_request(self):
         # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the
