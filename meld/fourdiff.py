@@ -23,6 +23,7 @@ from meld.filediff import FileDiff
 from meld.melddoc import MeldDoc
 from meld.recent import RecentType
 from meld.settings import bind_settings, get_meld_settings
+from meld.ui.util import make_multiobject_property_action
 
 log = logging.getLogger(__name__)
 
@@ -384,6 +385,8 @@ class FourDiff(Gtk.Overlay, MeldDoc):
 
         self._init_actions()
 
+        self._link_view_actions()
+
         self.files = None
 
         self.connect_scrolledwindows()
@@ -445,6 +448,23 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         builder = self.diff2.toolbar_actions_builder
         builder.get_object("fourdiff_swap_remote_and_local_button").set_visible(True)
         builder.get_object("fourdiff_toggle_view_button").set_visible(True)
+
+    def _link_view_actions(self):
+        """Link the view-local actions of all 3 filediffs"""
+        # This list is from filediff.py
+        sourceview_prop_actions = [
+            "draw-spaces-bool",
+            "highlight-current-line-local",
+            "show-line-numbers",
+            "wrap-mode-bool",
+        ]
+        textviews = [textview for diff in self.diffs for textview in diff.textview]
+        prop_action_group = Gio.SimpleActionGroup()
+        for prop in sourceview_prop_actions:
+            action = make_multiobject_property_action(textviews, prop)
+            prop_action_group.add_action(action)
+        for diff in self.diffs:
+            diff.insert_action_group("view-local", prop_action_group)
 
     def set_diff1_linkmap0_width_request(self):
         # Set diff1.linkmap0 width request so that diff1.scrolledwindow1 will be in the
