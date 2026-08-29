@@ -47,7 +47,7 @@ from meld.archivehelpers import (
     is_mounted_archive_root,
     unmount_archives_by_file,
 )
-from meld.conf import _
+from meld.conf import _, pgettext
 from meld.const import FILE_FILTER_ACTION_FORMAT, MISSING_TIMESTAMP, RecentType
 from meld.externalhelpers import open_files_external
 from meld.iohelpers import find_shared_parent_path, trash_or_confirm
@@ -1003,7 +1003,9 @@ class DirDiff(Gtk.Box, MeldDoc):
             if not any(os.path.isdir(root) for root in roots):
                 continue
 
-            yield _("Scanning {folder}").format(folder=roots[0][prefixlen:])
+            yield pgettext("folder analysis", "Scanning {folder}").format(
+                folder=roots[0][prefixlen:]
+            )
             differences = False
             encoding_errors = []
 
@@ -1142,7 +1144,7 @@ class DirDiff(Gtk.Box, MeldDoc):
         self.treeview[0].expand_to_path(Gtk.TreePath(("0",)))
         for path in sorted(expanded):
             self.treeview[0].expand_to_path(Gtk.TreePath(path))
-        yield _("Done")
+        yield pgettext("folder analysis", "Done")
 
         self._scan_in_progress -= 1
         if self._scan_in_progress == 0:

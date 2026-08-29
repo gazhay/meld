@@ -2,6 +2,7 @@
 import os
 import sys
 from pathlib import Path
+from gettext import pgettext
 
 __package__ = "meld"
 __version__ = "3.99.0"
