@@ -1,0 +1,16 @@
+[workspace]
+authors = ["Noam Raphael <noamraph@gmail.com>"]
+channels = ["conda-forge"]
+name = "linux-env"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = ">=3.14.6,<3.15"
+pycairo = ">=1.29.1,<2"
+pygobject = ">=3.56.3,<4"
+gtksourceview = ">=5.18.0,<6"
+libadwaita = ">=1.9.3,<2"
+adwaita-icon-theme = ">=49.0,<50"

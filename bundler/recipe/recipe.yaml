@@ -1,0 +1,55 @@
+schema_version: 1
+
+context:
+  version: 0.0.6
+  python_min: 3.10
+
+package:
+  name: meld
+  version: ${{ version }}
+
+source:
+  path: ../../
+
+build:
+  number: 1
+  noarch: python
+  script:
+    - ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - meson-python ==0.19.0
+    - meson ==1.11
+    - pip
+    - pycairo
+    - pygobject
+    - gtksourceview
+    - libadwaita
+    - glib
+  run:
+    - pycairo
+    - pygobject
+    - gtksourceview
+    - libadwaita
+    - adwaita-icon-theme
+
+tests:
+  - python:
+      imports:
+        - meld
+      pip_check: false
+      python_version: ${{ python_min }}.*
+
+about:
+  summary: A repackaged version of Meld, including the Fourdiff feature.
+  license: BSD-2-Clause AND GPL-2.0-only
+  license_file:
+    - COPYING
+    - meld/vc/COPYING
+  homepage: https://pypi.org/project/meld-fourdiff/
+
+extra:
+  recipe-maintainers:
+    - noamraph
