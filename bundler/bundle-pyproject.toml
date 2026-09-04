@@ -1,0 +1,57 @@
+# This file is for building the Meld bundle wheel.
+# It is verified by build_bundle_wheel that the metadata is the same as in the main
+# pyproject.toml.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+meld-bundle = "meld_bundle:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["meld_bundle"]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_force_platform_tag.py"
+platform_tag = "{PLATFORM_TAG}"
+
+
+[project]
+name = "meld-bundle"
+version = "{VERSION}"
+license = {file = "COPYING"}
+description = """
+Meld is a visual diff and merge tool targeted at developers. Meld helps you
+compare files, directories, and version controlled projects. It provides
+two- and three-way comparison of both files and directories, and supports
+many version control systems.
+"""
+
+maintainers = [
+    {name = "Kai Willadsen", email = "kai.willadsen@gmail.com"},
+]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Desktop Environment :: Gnome",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Version Control",
+]
+keywords=[
+    "diff",
+    "merge",
+]
+
+[project.urls]
+homepage = "https://meld.app/"
+documentation = "https://meld.app/help/"
+source = "https://gitlab.gnome.org/GNOME/meld/-/tree/main"
+download = "https://gitlab.gnome.org/GNOME/meld/-/releases"
+tracker = "https://gitlab.gnome.org/GNOME/meld/-/issues"
