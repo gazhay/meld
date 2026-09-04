@@ -22,7 +22,7 @@ from .remove_shlib_symlinks import (
 COMPRESSION_LEVEL = 9
 ELF_MAGIC = b"\x7fELF"
 
-ENTRYPOINT_SCRIPT = """
+ENTRYPOINT_SCRIPT = """\
 #!/bin/sh
 
 # Resolve $0 through any symlinks to find the real script location.
@@ -36,11 +36,12 @@ while [ -L "$SOURCE" ]; do
     *) SOURCE="$DIR/$SOURCE" ;; # relative to the symlink's directory
   esac
 done
-PREFIX=$(cd -P "$(dirname "$SOURCE")" && pwd)
+BIN_DIR=$(cd -P "$(dirname "$SOURCE")" && pwd)
+PREFIX=$(dirname "$BIN_DIR")
 
 export GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0"
 export XKB_CONFIG_ROOT="$PREFIX/share/xkeyboard-config-2"
-exec "$PREFIX/bin/python3.14" "$PREFIX/bin/meld" "$@"
+exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
 EXCLUDE_PACKAGES = {
@@ -58,6 +59,8 @@ EXCLUDE_PACKAGES = {
 # If the path from the root of the env matches one of EXCLUDE_PATTERNS and doesn't
 # match any of INCLUDE_PATTERNS, it's not copied to the dest env
 
+DYNMODS = "_decimal _sha3 _ctypes _pickle _sqlite _ssl _curses _curses_panel".split()
+
 EXCLUDE_PATTERNS = [
     "bin/**",
     "conda-meta/**",
@@ -67,17 +70,20 @@ EXCLUDE_PATTERNS = [
     "lib/libpython*",
     "lib/python*/ensurepip/**",
     "lib/python*/idlelib/**",
+    *(f"lib/python*/lib-dynload/{x}.*" for x in DYNMODS),
+    "libexec/**",
+    "sbin/**",
     "share/doc/**",
-    # Heavy cursors
-    "share/icons/Adwaita/cursors/progress",
-    "share/icons/Adwaita/cursors/wait",
-    "share/icons/Adwaita/cursors/watch",
+    "share/icons/Adwaita/cursors/progress",  # heavy cursor
+    "share/icons/Adwaita/cursors/wait",  # heavy cursor
+    "share/icons/Adwaita/cursors/watch",  # heavy cursor
     "share/icons/Adwaits/symbolic/status/**",  # ~1MB, not used
     "share/locale/**",
     "share/man/**",
     "share/python_compiler_compat/**",
-    "/share/zoneinfo/**",
+    "share/zoneinfo/**",
     "share/X11/xkb",  # a symlink to share/xkeyboard-config-2
+    "ssl/**",
     "var/cache/**",
     "*-conda-*/**",
     "**/__pycache__/**",
@@ -88,8 +94,8 @@ EXCLUDE_PATTERNS = [
 ]
 
 INCLUDE_PATTERNS = [
-    "bin/python3.14",
     "bin/meld",
+    "bin/python3.14",
 ]
 
 
@@ -152,6 +158,10 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
                 )
             if EXCLUDE_RE.match(relpath) and not INCLUDE_RE.match(relpath):
                 continue
+            if relpath == "bin/meld":
+                # Move bin/meld, which will not find the right python executable,
+                # to lib/meld
+                dst = dst_root / "lib/meld"
             if path_type in (PathType.HARDLINK, PathType.SOFTLINK):
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 copy2(src, dst, follow_symlinks=False)
@@ -242,7 +252,7 @@ def shrink_env(
         info(f"Compressing files into {compressed_dst}...")
         make_compressed_dir(dst_root, compressed_dst)
 
-    entrypoint = dst_root / "meld"
+    entrypoint = dst_root / "bin/meld"
     entrypoint.write_text(ENTRYPOINT_SCRIPT)
     entrypoint.chmod(0o755)
 
