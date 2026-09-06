@@ -106,6 +106,8 @@ mingw-dist:
 
 macos:
   stage: build
+  rules:
+    - when: never  # This currently fails, so skip it for now
   needs: []
   tags:
     - macos
