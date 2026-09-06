@@ -632,11 +632,30 @@ class FourDiff(Gtk.Overlay, MeldDoc):
         self.cover.insert_before(self, None)
         widget.insert_before(self, None)
 
+    @staticmethod
+    def _copy_cursor(src_view: Gtk.TextView, dst_view: Gtk.TextView) -> None:
+        """
+        Copy the cursor and selection from src_view to dst_view.
+        Also, if src_view has focus, move the focus to dst_view.
+        """
+        src, dst = src_view.get_buffer(), dst_view.get_buffer()
+        insert_offset = src.get_iter_at_mark(src.get_insert()).get_offset()
+        selbound_offset = src.get_iter_at_mark(src.get_selection_bound()).get_offset()
+        new_insert = dst.get_iter_at_offset(insert_offset)
+        new_selbound = dst.get_iter_at_offset(selbound_offset)
+        dst.select_range(new_insert, new_selbound)
+        if src_view.is_focus():
+            dst_view.grab_focus()
+
     def action_toggle_view(self, _action, _value):
         self.is_showing_2_diffs = not self.is_showing_2_diffs
         if self.is_showing_2_diffs:
+            self._copy_cursor(self.diff1.textview0, self.diff0.textview0)
+            self._copy_cursor(self.diff1.textview1, self.diff2.textview0)
             self.move_to_top(self.hbox)
         else:
+            self._copy_cursor(self.diff0.textview0, self.diff1.textview0)
+            self._copy_cursor(self.diff2.textview0, self.diff1.textview1)
             self.move_to_top(self.shrinking_bin)
         self._update_active_diff()
 
