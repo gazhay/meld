@@ -69,7 +69,8 @@ def build_bundle_wheel(
 
     if tmpdir is None:
         tmpdir = Path(mkdtemp(prefix="meld-"))
-    tmpdir.mkdir()
+    else:
+        tmpdir.mkdir()
 
     pyproject0 = mydir.joinpath("bundle-pyproject.toml").read_text()
     pyproject1 = replace(pyproject0, "{VERSION}", MELD_VERSION)
@@ -86,14 +87,8 @@ def build_bundle_wheel(
 
     copytree(appdir, pkgdir / "appdir", symlinks=True)
 
-    args = [
-        *"uv tool run --from build==1.6.0 pyproject-build".split(),
-        "--outdir",
-        str(outdir),
-        "--wheel",
-        str(tmpdir),
-    ]
-    print(" ".join(quote(arg) for arg in args), file=sys.stderr)
+    args = ["python", "-m", "build", "--outdir", outdir, "--wheel", tmpdir]
+    print(" ".join(quote(str(arg)) for arg in args), file=sys.stderr)
     check_call(args)
 
     if remove_tmpdir:
