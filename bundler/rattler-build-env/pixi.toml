@@ -9,3 +9,6 @@ version = "0.1.0"
 
 [dependencies]
 rattler-build = ">=0.74.0,<0.75"
+binutils = ">=2.46.1,<3"
+python = ">=3.14.7,<3.15"
+python-build = ">=1.6.0,<2"
