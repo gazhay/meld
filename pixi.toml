@@ -1,0 +1,48 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
+preview = ["pixi-build"]
+
+[package]
+name = "meld"
+version = "3.99.0"
+
+[package.build]
+backend = { name = "pixi-build-python", version = "0.*" }
+
+[package.host-dependencies]
+meson-python = "==0.19.0"
+meson = "==1.11.1"
+uv = "*"
+gtksourceview = "*"
+libadwaita = "*"
+pygobject = "*"
+glib = "*"
+pkgconfig = "*"
+zlib = "*"
+expat = "*"
+libxml2-devel = "*"
+gettext = "*"
+
+[tasks]
+
+[dependencies]
+pycairo = ">=1.29.1,<2"
+pygobject = ">=3.58.0,<4"
+gtksourceview = ">=5.18.0,<6"
+adwaita-icon-theme = ">=50.0,<51"
+libadwaita = ">=1.9.3,<2"
+
+[feature.build.dependencies]
+rattler-build = ">=0.74.0,<0.75"
+binutils = ">=2.44.0,<3"
+python-build = ">=1.6.0,<2"
+
+[feature.test.dependencies]
+ruff = ">=0.14.0,<0.15"
+pre-commit = ">=4.3.0,<4.4"
+pytest = ">=8.4.0,<8.5"
+
+[environments]
+build = ["build"]
+test = ["test", "build"]
