@@ -168,6 +168,30 @@ def _normalize(contents, ignore_blank_lines, regexes=()):
     return contents
 
 
+def _none_stat(f):
+    try:
+        return os.stat(f)
+    except OSError:
+        return None
+
+
+def _symlinks_same(files, comparison_args):
+    """Determine whether a list of files contains only identical
+    symlinks
+    """
+    shallow_comparison = comparison_args['shallow-comparison']
+
+    targets = [os.readlink(f) for f in files]
+
+    if all_same(targets):
+        if shallow_comparison or os.path.isabs(targets[0]):
+            return Same
+        else:
+            return Different
+    else:
+        return Different
+
+
 def _files_same(files, regexes, comparison_args):
     """Determine whether a list of files are the same.
 
@@ -177,13 +201,22 @@ def _files_same(files, regexes, comparison_args):
       DodgySame: The files are superficially the same (i.e., type, size, mtime)
       DodgyDifferent: The files are superficially different
       FileError: There was a problem reading one or more of the files
+      Different: The files are different
     """
 
     if all_same(files):
         return Same
 
     files = tuple(files)
-    stats = tuple([StatItem._make(os.stat(f)) for f in files])
+
+    opt_stats = [_none_stat(f) for f in files]
+
+    if not any(opt_stats):
+        return _symlinks_same(files, comparison_args)
+    elif not all(opt_stats):
+        return Different
+    else:
+        stats = tuple([StatItem._make(s) for s in opt_stats])
 
     shallow_comparison = comparison_args["shallow-comparison"]
     time_resolution_ns = comparison_args["time-resolution"]
@@ -1051,11 +1084,13 @@ class DirDiff(Gtk.Box, MeldDoc):
                                 dirs.add(pane, e)
                         except OSError as err:
                             if err.errno == errno.ENOENT:
-                                error_string = e + ": Dangling symlink"
+                                # Consider dangling symlinks as files,
+                                # since they don't contain further files
+                                files.add(pane, e)
                             else:
                                 error_string = e + err.strerror
-                            self.model.add_error(it, error_string, pane)
-                            differences = True
+                                self.model.add_error(it, error_string, pane)
+                                differences = True
                     elif stat.S_ISREG(s.st_mode):
                         files.add(pane, e)
                     elif stat.S_ISDIR(s.st_mode):
@@ -1802,13 +1837,7 @@ class DirDiff(Gtk.Box, MeldDoc):
         files = self.model.value_paths(it)
         regexes = [f.byte_filter for f in self.text_filters if f.active]
 
-        def none_stat(f):
-            try:
-                return os.stat(f)
-            except OSError:
-                return None
-
-        stats = [none_stat(f) for f in files[: self.num_panes]]
+        stats = [_none_stat(f) for f in files[: self.num_panes]]
         sizes = [s.st_size if s else 0 for s in stats]
         perms = [s.st_mode if s else 0 for s in stats]
         times = [s.st_mtime if s else 0 for s in stats]
@@ -1845,7 +1874,7 @@ class DirDiff(Gtk.Box, MeldDoc):
         else:
             newest = {i for i, t in enumerate(times) if t == newest_time}
 
-        if all(stats):
+        if all(stats) or not any(stats):
             all_same = self.file_compare(files, regexes)
             all_present_same = all_same
         else:
@@ -1870,7 +1899,7 @@ class DirDiff(Gtk.Box, MeldDoc):
 
         isdir = [os.path.isdir(files[j]) for j in range(self.model.ntree)]
         for j in range(self.model.ntree):
-            if stats[j]:
+            if stats[j] or not any(stats):
                 self.model.set_path_state(
                     it, j, state, isdir[j], display_text=name_overrides[j]
                 )
