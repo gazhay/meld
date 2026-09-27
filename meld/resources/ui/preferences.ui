@@ -359,6 +359,30 @@
         </child>
         <child>
           <object class="AdwPreferencesGroup">
+            <property name="title" translatable="yes">Line matching</property>
+            <child>
+              <object class="PreferenceComboRow" id="diff_algorithm_combo_row">
+                <property name="title" translatable="yes">Algorithm</property>
+                <property name="subtitle" translatable="yes">Patience and histogram keep related lines, such as function headers, paired with each other.</property>
+                <property name="enum-cls-name">DiffAlgorithm</property>
+                <property name="settings-key">diff-algorithm</property>
+                <property name="model">
+                  <object class="GtkStringList">
+                    <items>
+                      <item>meld</item>
+                      <item>myers</item>
+                      <item>minimal</item>
+                      <item>patience</item>
+                      <item>histogram</item>
+                    </items>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="AdwPreferencesGroup">
             <property name="title" translatable="yes">Change trimming</property>
             <child>
               <object class="AdwSwitchRow" id="checkbutton_ignore_blank_lines">

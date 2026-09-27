@@ -138,6 +138,7 @@ class FileDiff(Gtk.Box, MeldDoc):
 
     __gsettings_bindings_view__ = (
         ("ignore-blank-lines", "ignore-blank-lines"),
+        ("diff-algorithm", "diff-algorithm"),
         ("show-overview-map", "show-overview-map"),
         ("overview-map-style", "overview-map-style"),
     )
@@ -150,6 +151,7 @@ class FileDiff(Gtk.Box, MeldDoc):
     )
     show_overview_map = GObject.Property(type=bool, default=True)
     overview_map_style = GObject.Property(type=str, default="chunkmap")
+    diff_algorithm = GObject.Property(type=str, default="meld")
 
     actiongutter0 = Gtk.Template.Child()
     actiongutter1 = Gtk.Template.Child()
@@ -540,6 +542,7 @@ class FileDiff(Gtk.Box, MeldDoc):
             t.line_renderer = renderer
 
         self.connect("notify::ignore-blank-lines", self.refresh_comparison)
+        self.connect("notify::diff-algorithm", self.refresh_comparison)
 
     def do_realize(self):
         Gtk.Box().do_realize(self)
@@ -1845,6 +1848,7 @@ class FileDiff(Gtk.Box, MeldDoc):
     def _diff_files(self, refresh=False):
         texts = self.buffer_filtered[: self.num_panes]
         self.linediffer.ignore_blanks = self.props.ignore_blank_lines
+        self.linediffer.algorithm = self.props.diff_algorithm
         step = self.linediffer.set_sequences_iter(texts)
         while next(step) is None:
             yield 1

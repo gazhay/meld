@@ -21,6 +21,7 @@ from gi.repository import Adw, Gio, GLib, GObject, Gtk, GtkSource
 
 from meld.conf import _
 from meld.filters import FilterEntry
+from meld.matchers.gitmatcher import git_available
 from meld.settings import settings
 from meld.ui.columnlist import ColumnList
 from meld.ui.listwidget import EditableListWidget
@@ -228,6 +229,16 @@ class VersionPaneOrder(PreferenceEnum):
     llrr = ("llrr", _("Left is local, right is remote"), True)
 
 
+class DiffAlgorithm(PreferenceEnum):
+    setting_type = enum.nonmember(str)
+
+    meld = ("meld", _("Meld"), 0)
+    myers = ("myers", _("Myers (git)"), 1)
+    minimal = ("minimal", _("Minimal (git)"), 2)
+    patience = ("patience", _("Patience (git)"), 3)
+    histogram = ("histogram", _("Histogram (git)"), 4)
+
+
 class MergePaneOrder(PreferenceEnum):
     setting_type = enum.nonmember(str)
 
@@ -252,6 +263,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
     column_list_vbox = Gtk.Template.Child()
     custom_edit_command_entry = Gtk.Template.Child()
     custom_font_switch_row = Gtk.Template.Child()
+    diff_algorithm_combo_row = Gtk.Template.Child()
     file_filters_vbox = Gtk.Template.Child()
     fontpicker = Gtk.Template.Child()
     spinbutton_commit_margin = Gtk.Template.Child()
@@ -264,6 +276,15 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        if not git_available():
+            # Only Meld's own algorithm works without git
+            settings.reset("diff-algorithm")
+            model = self.diff_algorithm_combo_row.get_model()
+            model.splice(1, model.get_n_items() - 1, [])
+            self.diff_algorithm_combo_row.props.subtitle = _(
+                "More algorithms are available when git is installed."
+            )
 
         bindings = [
             ("custom-font", self.fontpicker, "font"),

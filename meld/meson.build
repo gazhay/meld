@@ -43,6 +43,7 @@ folders = {
   'matchers': [
     'matchers/__init__.py',
     'matchers/diffutil.py',
+    'matchers/gitmatcher.py',
     'matchers/helpers.py',
     'matchers/merge.py',
     'matchers/myers.py',
