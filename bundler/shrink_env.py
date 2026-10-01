@@ -14,7 +14,7 @@ from tarfile import TarFile
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
 
-from .conda_parse import PathType, Pkg, get_pkgs
+from .conda_parse import PathType, Pkg, Platform, get_pkgs
 from .remove_shlib_symlinks import (
     get_shlib_re,
     get_shlib_subs,
@@ -22,6 +22,8 @@ from .remove_shlib_symlinks import (
     remove_shlib_symlinks,
     sub_shlibs_in_something,
 )
+
+WIN = Platform.WIN
 
 COMPRESSION_LEVEL = 9
 ELF_MAGIC = b"\x7fELF"
@@ -52,6 +54,26 @@ export XDG_DATA_DIRS="$PREFIX/share:$XDG_DATA_DIRS"
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
+WINDOWS_ENTRYPOINT_SCRIPT = r"""
+@echo off
+setlocal
+
+rem set PREFIX to the directory of this file, stripping the trailing backslash
+set "PREFIX=%~dp0"
+set "PREFIX=%PREFIX:~0,-1%"
+
+set "GI_TYPELIB_PATH=%PREFIX%\Library\lib\girepository-1.0"
+set "FONTCONFIG_PATH=%PREFIX%\Library\etc\fonts"
+set "FONTCONFIG_FILE=%PREFIX%\Library\etc\fonts\fonts.conf"
+set "GSETTINGS_SCHEMA_DIR=%PREFIX%\Library\share\glib-2.0\schemas"
+set "XDG_DATA_DIRS=%PREFIX%\Library\share"
+set "PATH=%PREFIX%;%PREFIX%\Library\bin;%PATH%"
+set "CONDA_PREFIX=%PREFIX%"
+
+"%PREFIX%\python.exe" "%PREFIX%\Library\lib\meld" %*
+exit /b %ERRORLEVEL%
+"""
+
 EXCLUDE_PACKAGES = {
     "bzip2",
     "ca-certificates",
@@ -59,38 +81,39 @@ EXCLUDE_PACKAGES = {
     "libcups",
     "libsqlite",
     "ncurses",
-    "pcre2",
     "tk",
 }
 
 # If the path from the root of the env matches one of EXCLUDE_PATTERNS and doesn't
 # match any of INCLUDE_PATTERNS, it's not copied to the dest env
 
-DYNMODS = "_decimal _sha3 _ctypes _pickle _sqlite _ssl _curses _curses_panel".split()
+DYNMODS = "_decimal _sha3 _pickle _sqlite _ssl _curses _curses_panel".split()
 
 EXCLUDE_PATTERNS = [
     "bin/**",
+    "Scripts/**",
     "conda-meta/**",
-    "include/**",
-    "lib/cairo/libcairo-fdr.a",
-    "lib/icu/**",  # contains a symlink to a directory, not needed
+    "**/include/**",
+    "**/lib/icu/**",  # contains a symlink to a directory, not needed
     "lib/libpython*",
-    "lib/python*/ensurepip/**",
-    "lib/python*/idlelib/**",
+    "**/ensurepip/**",
+    "**/idlelib/**",
     *(f"lib/python*/lib-dynload/{x}.*" for x in DYNMODS),
+    *(f"DLLs/{x}.pyd" for x in DYNMODS),
+    "DLLs/insrumented/**",
     "libexec/**",
     "sbin/**",
-    "share/doc/**",
-    "share/icons/Adwaita/cursors/progress",  # heavy cursor
-    "share/icons/Adwaita/cursors/wait",  # heavy cursor
-    "share/icons/Adwaita/cursors/watch",  # heavy cursor
-    "share/icons/Adwaits/symbolic/status/**",  # ~1MB, not used
-    "share/locale/**",
-    "share/man/**",
+    "**/share/doc/**",
+    "**/share/icons/Adwaita/cursors/progress",  # heavy cursor
+    "**/share/icons/Adwaita/cursors/wait",  # heavy cursor
+    "**/share/icons/Adwaita/cursors/watch",  # heavy cursor
+    "**/share/icons/Adwaits/symbolic/status/**",  # ~1MB, not used
+    "**/share/locale/**",
+    "**/share/man/**",
     "share/python_compiler_compat/**",
-    "share/zoneinfo/**",
+    "**/zoneinfo/**",
     "share/X11/xkb",  # a symlink to share/xkeyboard-config-2
-    "ssl/**",
+    "**/ssl/**",
     "var/cache/**",
     "*-conda-*/**",
     "**/__pycache__/**",
@@ -101,7 +124,6 @@ EXCLUDE_PATTERNS = [
 ]
 
 INCLUDE_PATTERNS = [
-    "bin/meld",
     "bin/python3.14",
 ]
 
@@ -151,17 +173,17 @@ def print_sizes(sizes: dict[str, int]) -> None:
         print(f"{size:>10,}  {size / total_size:>5.1%}  {name}")
 
 
-def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
-    pkgs0 = get_pkgs(src_root)
-    pkgs = {name: pkg for name, pkg in pkgs0.items() if name not in EXCLUDE_PACKAGES}
-    if "meld" in pkgs:
+def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> Platform:
+    pkgs0, platform = get_pkgs(src_root)
+    pkgs = [pkg for pkg in pkgs0 if pkg.name not in EXCLUDE_PACKAGES]
+    if any(pkg.name == "meld" for pkg in pkgs):
         raise RuntimeError(
             f"Not expecting to find a conda package 'meld' in {src_root}"
         )
-    sorted_pkgs = sorted(pkgs.values(), key=lambda pkg: pkg.name)
+    sorted_pkgs = sorted(pkgs, key=lambda pkg: pkg.name)
     pkgs_s = [f"{pkg.name}=={pkg.version}" for pkg in sorted_pkgs]
     info(f"Copying packages: {pkgs_s}")
-    for pkg in pkgs.values():
+    for pkg in pkgs:
         for relpath, pkgpath in pkg.paths.items():
             src = src_root / relpath
             dst = dst_root / relpath
@@ -179,25 +201,36 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
                 dst.mkdir(parents=True, exist_ok=True)
             else:
                 assert False
-    check_call(["glib-compile-schemas", dst_root / "share/glib-2.0/schemas"])
+    share_dir = "Library/share" if platform == WIN else "share"
+    check_call(["glib-compile-schemas", dst_root / share_dir / "glib-2.0/schemas"])
+    return platform
 
 
-def fix_fonts_conf(dst_root: Path) -> None:
-    fonts_conf_fn = dst_root / "etc/fonts/fonts.conf"
+def fix_fonts_conf(dst_root: Path, platform: Platform) -> None:
+    etc_dir = "Library/etc" if platform == WIN else "etc"
+    fonts_conf_fn = dst_root / etc_dir / "fonts/fonts.conf"
     fonts_conf0 = fonts_conf_fn.read_text()
-    PATTERN = r"\t<dir>.+/share/fonts</dir>\n\t<dir>.+/fonts</dir>\n"
-    REL = (
-        '\t<dir prefix="relative">../../share/fonts</dir>\n'
-        + '\t<dir prefix="relative">../../fonts</dir>\n'
-    )
-    fonts_conf = re.sub(PATTERN, REL, fonts_conf0)
+    BEFORE = "<!-- Font directory list -->\n"
+    if platform == WIN:
+        # fonts.conf is in root/Library/etc/fonts, and the fonts are in root/fonts
+        ADD = '\t<dir prefix="relative">../../../fonts</dir>\n'
+    else:
+        # fonts.conf is in root/etc/fonts, and the fonts are in root/fonts
+        ADD = (
+            '\t<dir prefix="relative">../../share/fonts</dir>\n'
+            + '\t<dir prefix="relative">../../fonts</dir>\n'
+        )
+    fonts_conf = fonts_conf0.replace(BEFORE, BEFORE + ADD)
     if fonts_conf == fonts_conf0:
         raise RuntimeError(f"Didn't find pattern in {fonts_conf_fn}")
     fonts_conf_fn.write_text(fonts_conf)
 
 
-def extract_meld_package(meld_pkg: Path, dst_root: Path) -> None:
-    (site_packages,) = dst_root.glob("lib/python*/site-packages")
+def extract_meld_package(meld_pkg: Path, dst_root: Path, platform: Platform) -> None:
+    if platform == WIN:
+        site_packages = dst_root / "Lib/site-packages"
+    else:
+        (site_packages,) = dst_root.glob("lib/python*/site-packages")
     zf = ZipFile(meld_pkg)
     (pkg_zi,) = [zi for zi in zf.filelist if zi.filename.startswith("pkg-")]
     assert pkg_zi.filename.endswith(".zst")
@@ -213,7 +246,8 @@ def extract_meld_package(meld_pkg: Path, dst_root: Path) -> None:
         if member == "python-scripts/meld":
             # Put the bin/meld script, which will not find the right python executable,
             # in lib/meld
-            dst = dst_root / "lib/meld"
+            libdir = "Library/lib" if platform == WIN else "lib"
+            dst = dst_root / libdir / "meld"
         else:
             assert member.startswith("site-packages/")
             dst = site_packages.parent / member
@@ -282,33 +316,41 @@ def shrink_env(
         raise RuntimeError(f"Destination {dst_root} is not empty")
 
     info(f"Copying files from {src_root} to {dst_root}...")
-    copy_without_excluded_packages(src_root, dst_root)
-    fix_fonts_conf(dst_root)
+    platform = copy_without_excluded_packages(src_root, dst_root)
+    fix_fonts_conf(dst_root, platform)
     info(f"Extracting {meld_pkg}...")
-    extract_meld_package(meld_pkg, dst_root)
-    info("Stripping debug symbols...")
-    strip_elfs(dst_root)
+    extract_meld_package(meld_pkg, dst_root, platform)
 
-    libdir = dst_root / "lib"
-    shlib_symlinks = get_shlib_symlinks(libdir)
-    subs = get_shlib_subs(shlib_symlinks)
-    shlib_re = get_shlib_re(subs)
+    if platform != WIN:
+        info("Stripping debug symbols...")
+        strip_elfs(dst_root)
 
-    remove_shlib_symlinks(libdir, shlib_symlinks)
-    wasted_bytes = deref_symlinks(dst_root, print_symlink_sizes)
-    extra = "" if print_symlink_sizes else " (add --print-symlink-sizes for details)"
-    info(f"Dereferenced symlinks. Wasted bytes: {wasted_bytes:,}" + extra)
+        libdir = dst_root / "lib"
+        shlib_symlinks = get_shlib_symlinks(libdir)
+        subs = get_shlib_subs(shlib_symlinks)
+        shlib_re = get_shlib_re(subs)
 
-    info("Fixing shlib names in files...")
-    fix_shlib_names(subs, shlib_re, dst_root)
+        remove_shlib_symlinks(libdir, shlib_symlinks)
+        wasted_bytes = deref_symlinks(dst_root, print_symlink_sizes)
+        extra = (
+            "" if print_symlink_sizes else " (add --print-symlink-sizes for details)"
+        )
+        info(f"Dereferenced symlinks. Wasted bytes: {wasted_bytes:,}" + extra)
+
+        info("Fixing shlib names in files...")
+        fix_shlib_names(subs, shlib_re, dst_root)
 
     if compressed_dst is not None:
         info(f"Compressing files into {compressed_dst}...")
         make_compressed_dir(dst_root, compressed_dst)
 
-    entrypoint = dst_root / "bin/meld"
-    entrypoint.write_text(ENTRYPOINT_SCRIPT)
-    entrypoint.chmod(0o755)
+    if platform == WIN:
+        entrypoint = dst_root / "meld.bat"
+        entrypoint.write_text(WINDOWS_ENTRYPOINT_SCRIPT)
+    else:
+        entrypoint = dst_root / "bin/meld"
+        entrypoint.write_text(ENTRYPOINT_SCRIPT)
+        entrypoint.chmod(0o755)
 
     info("Done!")
 
@@ -346,10 +388,8 @@ def main():
         parser.error("If --print-pkg-sizes is not given, dst must be given")
 
     if args.print_pkg_sizes:
-        pkgs = get_pkgs(args.src)
-        sizes = {
-            pkg.name: get_pkg_compressed_size(args.src, pkg) for pkg in pkgs.values()
-        }
+        pkgs, _platform = get_pkgs(args.src)
+        sizes = {pkg.name: get_pkg_compressed_size(args.src, pkg) for pkg in pkgs}
         print_sizes(sizes)
 
     if args.dst is not None:

@@ -10,6 +10,12 @@ class PathType(Enum):
     HARDLINK = "hardlink"
     SOFTLINK = "softlink"
     DIRECTORY = "directory"
+    UNIX_PYTHON_ENTRY_POINT = "unix_python_entry_point"
+
+
+class Platform(Enum):
+    LINUX = "linux"
+    WIN = "win"
 
 
 @dataclass
@@ -23,6 +29,7 @@ class PkgPath:
 class Pkg:
     name: str
     version: str
+    platform: Platform | None
     depends: list[str]
     paths: dict[str, PkgPath]
 
@@ -32,6 +39,12 @@ def parse_pkg(data: dict[str, object]) -> Pkg:
     assert isinstance(name, str)
     version = data["version"]
     assert isinstance(version, str)
+    if "platform" in data:
+        _platform = data["platform"]
+        assert isinstance(_platform, str)
+        platform = Platform(_platform)
+    else:
+        platform = None
     depends = data["depends"]
     assert isinstance(depends, list) and all(isinstance(x, str) for x in depends)
     files = data["files"]
@@ -52,17 +65,22 @@ def parse_pkg(data: dict[str, object]) -> Pkg:
         assert isinstance(size_in_bytes, int)
         paths[_path] = PkgPath(path_type, sha256, size_in_bytes)
     assert set(files) == set(paths.keys())
-    return Pkg(name, version, depends, paths)
+    return Pkg(name, version, platform, depends, paths)
 
 
-def get_pkgs(env_root: Path) -> dict[str, Pkg]:
-    r: dict[str, Pkg] = {}
+def get_pkgs(env_root: Path) -> tuple[list[Pkg], Platform]:
+    r: list[Pkg] = []
     for fn in env_root.joinpath("conda-meta").glob("*.json"):
         data = json.loads(fn.read_text())
         pkg = parse_pkg(data)
-        r[pkg.name] = pkg
-    all_paths = [path for pkg in r.values() for path in pkg.paths.keys()]
+        r.append(pkg)
+    r.sort(key=lambda pkg: pkg.name)
+    all_paths = [path for pkg in r for path in pkg.paths.keys()]
     assert len(set(all_paths)) == len(all_paths), (
         "There is a path which belongs to multiple packages"
     )
-    return r
+    platforms = {pkg.platform for pkg in r if pkg.platform}
+    if len(platforms) != 1:
+        raise RuntimeError(f"Expecting to find exactly one platform, found {platforms}")
+    (platform,) = platforms
+    return r, platform
