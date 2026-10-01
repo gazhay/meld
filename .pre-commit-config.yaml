@@ -32,4 +32,4 @@ repos:
   hooks:
     - id: ruff-check
 
-exclude: ^po/.*\.po$
+exclude: ^(po/.*\.po|bundler/examples/.*)$
