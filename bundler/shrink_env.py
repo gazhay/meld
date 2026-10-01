@@ -47,6 +47,7 @@ export GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0"
 export XKB_CONFIG_ROOT="$PREFIX/share/xkeyboard-config-2"
 export FONTCONFIG_PATH="$PREFIX/etc/fonts"
 export FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf"
+export GSETTINGS_SCHEMA_DIR="$PREFIX/share/glib-2.0/schemas"
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
@@ -177,6 +178,21 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
                 dst.mkdir(parents=True, exist_ok=True)
             else:
                 assert False
+    check_call(["glib-compile-schemas", dst_root / "share/glib-2.0/schemas"])
+
+
+def fix_fonts_conf(dst_root: Path) -> None:
+    fonts_conf_fn = dst_root / "etc/fonts/fonts.conf"
+    fonts_conf0 = fonts_conf_fn.read_text()
+    PATTERN = r"\t<dir>.+/share/fonts</dir>\n\t<dir>.+/fonts</dir>\n"
+    REL = (
+        '\t<dir prefix="relative">../../share/fonts</dir>\n'
+        + '\t<dir prefix="relative">../../fonts</dir>\n'
+    )
+    fonts_conf = re.sub(PATTERN, REL, fonts_conf0)
+    if fonts_conf == fonts_conf0:
+        raise RuntimeError(f"Didn't find pattern in {fonts_conf_fn}")
+    fonts_conf_fn.write_text(fonts_conf)
 
 
 def extract_meld_package(meld_pkg: Path, dst_root: Path) -> None:
@@ -266,6 +282,7 @@ def shrink_env(
 
     info(f"Copying files from {src_root} to {dst_root}...")
     copy_without_excluded_packages(src_root, dst_root)
+    fix_fonts_conf(dst_root)
     info(f"Extracting {meld_pkg}...")
     extract_meld_package(meld_pkg, dst_root)
     info("Stripping debug symbols...")
