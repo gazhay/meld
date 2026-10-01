@@ -23,6 +23,7 @@ zlib = "*"
 expat = "*"
 libxml2-devel = "*"
 gettext = "*"
+harfbuzz = "*"
 
 [tasks]
 
