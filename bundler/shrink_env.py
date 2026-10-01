@@ -122,6 +122,7 @@ EXCLUDE_PATTERNS = [
     "**/*.cmake",
     "**/valgrind/**",
     "**/*.a",
+    "**/*.pdb",  # windows debug symbols
 ]
 
 INCLUDE_PATTERNS = [

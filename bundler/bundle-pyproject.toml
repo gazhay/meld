@@ -14,6 +14,7 @@ meldmerge = "meld_bundle:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["meld_bundle"]
+artifacts = ["meld_bundle/appdir/**/*"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "hatch_force_platform_tag.py"

@@ -70,6 +70,7 @@ def build_bundle_wheel(
     appdir: Path, outdir: Path, tmpdir: Path | None = None, remove_tmpdir: bool = True
 ):
     verify_bundle_pyproject()
+    is_win = (appdir / "python.exe").exists()
 
     if tmpdir is None:
         tmpdir = Path(mkdtemp(prefix="meld-"))
@@ -78,7 +79,8 @@ def build_bundle_wheel(
 
     pyproject0 = mydir.joinpath("bundle-pyproject.toml").read_text()
     pyproject1 = replace(pyproject0, "{VERSION}", MELD_VERSION)
-    pyproject = replace(pyproject1, "{PLATFORM_TAG}", "manylinux_2_28_x86_64")
+    platform = "win_amd64" if is_win else "manylinux_2_28_x86_64"
+    pyproject = replace(pyproject1, "{PLATFORM_TAG}", platform)
     tmpdir.joinpath("pyproject.toml").write_text(pyproject)
 
     copy(repodir / "README.md", tmpdir)
@@ -87,7 +89,8 @@ def build_bundle_wheel(
 
     pkgdir = tmpdir / "meld_bundle"
     pkgdir.mkdir()
-    copy(mydir / "bundle_shim.py", pkgdir / "__init__.py")
+    bundle_shim = "bundle_shim_windows.py" if is_win else "bundle_shim.py"
+    copy(mydir / bundle_shim, pkgdir / "__init__.py")
 
     copytree(appdir, pkgdir / "appdir", symlinks=True)
 
