@@ -90,7 +90,7 @@ build-bundle:
     # Create a .zip from it
     - zip -qr meld-win-x86_64.zip meld-win-x86_64
     # Create a bundle wheel
-    # - pixi run -e build python -m bundler.build_bundle_wheel meld-linux-x86_64 .
+    - pixi run -e build python -m bundler.build_bundle_wheel meld-win-x86_64 .
 
 test-bundle-linux:
   stage: test
@@ -105,7 +105,7 @@ test-bundle-linux:
     - tar -xf meld-linux-x86_64.tar.gz
     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld-linux-x86_64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - python -m venv venv
-    - venv/bin/pip install meld*.whl
+    - venv/bin/pip install meldmerge-*-py3-none-manylinux_2_28_x86_64.whl
     - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 test-bundle-windows:
