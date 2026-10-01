@@ -33,6 +33,7 @@ MELD_VERSION = get_my_version()
 def verify_bundle_pyproject() -> None:
     if tomllib is None:
         warning("Not validating bundle-pyproject.toml because tomllib unavailable")
+        return
     main_pyproj_path = repodir.joinpath("pyproject.toml")
     main_pyproj = tomllib.loads(main_pyproj_path.read_text())
     bundle_pyproj_path = mydir.joinpath("bundle-pyproject.toml")
@@ -41,9 +42,12 @@ def verify_bundle_pyproject() -> None:
     expected_proj = main_pyproj["project"].copy()
     for k in ("requires-python", "dependencies", "dynamic"):
         del expected_proj[k]
-    expected_proj["name"] = "meld-bundle"
+    expected_proj["name"] = "meldmerge"
     expected_proj["version"] = "{VERSION}"
-    expected_proj["scripts"] = {"meld-bundle": "meld_bundle:main"}
+    expected_proj["scripts"] = {
+        "meld": "meld_bundle:main",
+        "meldmerge": "meld_bundle:main",
+    }
 
     bundle_proj = bundle_pyproj["project"]
     if bundle_proj != expected_proj:

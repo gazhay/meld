@@ -7,7 +7,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-meld-bundle = "meld_bundle:main"
+meld = "meld_bundle:main"
+# We add a script with the same name as the package, to allow running the package by
+# pipx/uvx without extra args.
+meldmerge = "meld_bundle:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["meld_bundle"]
@@ -18,7 +21,7 @@ platform_tag = "{PLATFORM_TAG}"
 
 
 [project]
-name = "meld-bundle"
+name = "meldmerge"
 version = "{VERSION}"
 license = {file = "COPYING"}
 description = """
