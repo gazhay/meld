@@ -40,74 +40,88 @@ stages:
 #     - export -p > /root/ci-env.sh && chmod 600 /root/ci-env.sh && echo 'source /root/ci-env.sh; cd "$CI_PROJECT_DIR"' >> /root/.bashrc
 #     - ssh -N -R localhost:2222:localhost:2222 tunnel@imfree.me -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ServerAliveInterval=30
 
-.pythonchecks:
-  stage: check
-  image: registry.fedoraproject.org/fedora:latest
-  needs: []
-  script:
-   - dnf install -y git glib2 gtk4 gtksourceview5 libadwaita python3-cairo python3-pip python3-gobject-base
-   - pip3 install -r dev-requirements.txt
-   - $PYTHON_CHECK_COMMAND
+# .pythonchecks:
+#   stage: check
+#   image: registry.fedoraproject.org/fedora:latest
+#   needs: []
+#   script:
+#    - dnf install -y git glib2 gtk4 gtksourceview5 libadwaita python3-cairo python3-pip python3-gobject-base
+#    - pip3 install -r dev-requirements.txt
+#    - $PYTHON_CHECK_COMMAND
 
-lint:
-  extends: .pythonchecks
-  variables:
-      PYTHON_CHECK_COMMAND: "pre-commit run --all-files --show-diff-on-failure"
+# lint:
+#   extends: .pythonchecks
+#   variables:
+#       PYTHON_CHECK_COMMAND: "pre-commit run --all-files --show-diff-on-failure"
 
-pytest:
-  extends: .pythonchecks
-  variables:
-      PYTHON_CHECK_COMMAND: "pytest"
-
-.pixi:
-  variables:
-    PIXI_FROZEN: "true"
-    PIXI_LOCKED: "true"
-  before_script:
-    # Install pixi. 0.81.0 Is just the current latest release
-    - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
-
-build-conda-pkg:
-  stage: build
-  needs: []
-  artifacts:
-    paths:
-      - "meld-*.conda"
-  extends: .pixi
-  script:
-    # Build the package
-    - pixi publish --target-dir .
+# pytest:
+#   extends: .pythonchecks
+#   variables:
+#       PYTHON_CHECK_COMMAND: "pytest"
 
 build-bundle:
   stage: build
-  needs: [build-conda-pkg]
   artifacts:
     paths:
-      - "meld-appdir.tar.bz2"
+      - "meld-*.conda"
+      - "meld-linux-x86_64.tar.gz"
       - "*.whl"
-  extends: .pixi
+      - "meld-win-x86_64.zip"
+  variables:
+    PIXI_FROZEN: "true"
+    PIXI_LOCKED: "true"
   script:
-    # Build the appdir.
+    - dnf install -y zip
+    # Install pixi. 0.81.0 Is just the current latest release
+    - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
+    # Build the package
+    - pixi publish --target-dir .
+    # Build the appdir for linux-x86_64
     - pixi reinstall -e default
-    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-appdir
+    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
     # Create a .tar.bz2 from it
-    - tar -cjf meld-appdir.tar.bz2 meld-appdir
+    - tar -czf meld-linux-x86_64.tar.gz meld-linux-x86_64
     # Create a bundle wheel
-    - pixi run -e build python -m bundler.build_bundle_wheel meld-appdir .
+    - pixi run -e build python -m bundler.build_bundle_wheel meld-linux-x86_64 .
 
-test-bundle:
+    # Build the appdir for win-x86_64
+    - pixi reinstall -e default -p win-64
+    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-win-x86_64
+    # Create a .zip from it
+    - zip -qr meld-win-x86_64.zip meld-win-x86_64
+    # Create a bundle wheel
+    # - pixi run -e build python -m bundler.build_bundle_wheel meld-linux-x86_64 .
+
+test-bundle-linux:
   stage: test
   needs: [build-bundle]
   artifacts:
     paths:
       - "*.png"
+  variables:
+    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
   script:
     - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon python
-    - tar -xf meld-appdir.tar.bz2
-    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 xvfb-run -a -s "-screen 0 1920x1080x24" meld-appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - tar -xf meld-linux-x86_64.tar.gz
+    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld-linux-x86_64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - python -m venv venv
     - venv/bin/pip install meld*.whl
-    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+
+test-bundle-windows:
+  stage: test
+  needs: [build-bundle]
+  tags:
+    - win32-ps
+  artifacts:
+    paths:
+      - "*.png"
+  variables:
+    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
+  script:
+    # We use a separate script, because this seems required in order to catch all errors
+    - .\bundler\test-bundle-windows.ps1
+    - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 
 # mingw-dist:

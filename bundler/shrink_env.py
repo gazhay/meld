@@ -51,6 +51,7 @@ export FONTCONFIG_PATH="$PREFIX/etc/fonts"
 export FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf"
 export GSETTINGS_SCHEMA_DIR="$PREFIX/share/glib-2.0/schemas"
 export XDG_DATA_DIRS="$PREFIX/share:$XDG_DATA_DIRS"
+
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
@@ -67,8 +68,8 @@ set "FONTCONFIG_PATH=%PREFIX%\Library\etc\fonts"
 set "FONTCONFIG_FILE=%PREFIX%\Library\etc\fonts\fonts.conf"
 set "GSETTINGS_SCHEMA_DIR=%PREFIX%\Library\share\glib-2.0\schemas"
 set "XDG_DATA_DIRS=%PREFIX%\Library\share"
+
 set "PATH=%PREFIX%;%PREFIX%\Library\bin;%PATH%"
-set "CONDA_PREFIX=%PREFIX%"
 
 "%PREFIX%\python.exe" "%PREFIX%\Library\lib\meld" %*
 exit /b %ERRORLEVEL%
