@@ -469,6 +469,15 @@ def ci_screenshot():
     import cairo
     from gi.repository import Gio, GLib, Gtk
 
+    from meld.settings import get_settings
+
+    turn_on_highlight_s = os.environ.get("MELD_TURN_ON_HIGHLIGHT_SYNTAX", "0")
+    allowed_vals = {"0": False, "false": False, "1": True, "true": True}
+    turn_on_highlight = allowed_vals[turn_on_highlight_s.lower()]
+    if turn_on_highlight:
+        settings = get_settings()
+        settings.set_boolean("highlight-syntax", True)
+
     screenshot_filename = os.environ.get("MELD_SCREENSHOT_AND_EXIT")
     if not screenshot_filename:
         return
