@@ -75,8 +75,6 @@ build-conda-pkg:
       - "meld-*.conda"
   extends: .pixi
   script:
-    # Install pixi. 0.81.0 Is just the current latest release
-    # - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
     # Build the package
     - pixi publish --target-dir .
 
@@ -89,8 +87,6 @@ build-bundle:
       - "*.whl"
   extends: .pixi
   script:
-    # Install pixi. 0.81.0 Is just the current latest release
-    # - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
     # Build the appdir.
     - pixi reinstall -e default
     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-appdir

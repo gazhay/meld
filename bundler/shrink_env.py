@@ -48,6 +48,7 @@ export XKB_CONFIG_ROOT="$PREFIX/share/xkeyboard-config-2"
 export FONTCONFIG_PATH="$PREFIX/etc/fonts"
 export FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf"
 export GSETTINGS_SCHEMA_DIR="$PREFIX/share/glib-2.0/schemas"
+export XDG_DATA_DIRS="$PREFIX/share:$XDG_DATA_DIRS"
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
