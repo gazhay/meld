@@ -7,8 +7,8 @@
 
 stages:
   - check
-  # - test
   - build
+  - test
   # - deploy
 
 
@@ -85,6 +85,21 @@ build-bundle:
     - tar -cjf meld-appdir.tar.bz2 meld-appdir
     # Create a bundle wheel
     - pixi run -e build python -m bundler.build_bundle_wheel meld-appdir .
+
+test-bundle:
+  stage: test
+  needs: [build-bundle]
+  artifacts:
+    paths:
+      - "*.png"
+  script:
+    - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon
+    - tar -xf meld-appdir.tar.bz2
+    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld-appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - python -m venv venv
+    - venv/bin/pip install meld*.whl
+    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+
 
 # mingw-dist:
 #   stage: build
