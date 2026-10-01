@@ -28,6 +28,7 @@ harfbuzz = "*"
 [tasks]
 
 [dependencies]
+python = ">=3.14,<3.15"
 pycairo = ">=1.29.1,<2"
 pygobject = ">=3.58.0,<4"
 gtksourceview = ">=5.18.0,<6"
@@ -44,6 +45,12 @@ ruff = ">=0.14.0,<0.15"
 pre-commit = ">=4.3.0,<4.4"
 pytest = ">=8.4.0,<8.5"
 
+[feature.dev.dependencies]
+ipykernel = "*"
+ipywidgets = "*"
+pip = "*"  # required for vscode jupyter
+
 [environments]
 build = ["build"]
 test = ["test", "build"]
+dev = ["dev", "test", "build"]

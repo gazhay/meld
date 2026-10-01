@@ -22,6 +22,7 @@ class PkgPath:
 @dataclass
 class Pkg:
     name: str
+    version: str
     depends: list[str]
     paths: dict[str, PkgPath]
 
@@ -29,6 +30,8 @@ class Pkg:
 def parse_pkg(data: dict[str, object]) -> Pkg:
     name = data["name"]
     assert isinstance(name, str)
+    version = data["version"]
+    assert isinstance(version, str)
     depends = data["depends"]
     assert isinstance(depends, list) and all(isinstance(x, str) for x in depends)
     files = data["files"]
@@ -49,7 +52,7 @@ def parse_pkg(data: dict[str, object]) -> Pkg:
         assert isinstance(size_in_bytes, int)
         paths[_path] = PkgPath(path_type, sha256, size_in_bytes)
     assert set(files) == set(paths.keys())
-    return Pkg(name, depends, paths)
+    return Pkg(name, version, depends, paths)
 
 
 def get_pkgs(env_root: Path) -> dict[str, Pkg]:

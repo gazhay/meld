@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import glob
+import io
 import logging
 import re
 import zlib
+from compression import zstd
 from logging import info
 from pathlib import Path
 from shutil import copy2
 from subprocess import check_call
+from tarfile import TarFile
 from tempfile import NamedTemporaryFile
+from zipfile import ZipFile
 
 from .conda_parse import PathType, Pkg, get_pkgs
 from .remove_shlib_symlinks import (
@@ -41,6 +45,8 @@ PREFIX=$(dirname "$BIN_DIR")
 
 export GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0"
 export XKB_CONFIG_ROOT="$PREFIX/share/xkeyboard-config-2"
+export FONTCONFIG_PATH="$PREFIX/etc/fonts"
+export FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf"
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
@@ -49,7 +55,6 @@ EXCLUDE_PACKAGES = {
     "ca-certificates",
     "krb5",
     "libcups",
-    "libharfbuzz-devel",
     "libsqlite",
     "ncurses",
     "pcre2",
@@ -147,6 +152,13 @@ def print_sizes(sizes: dict[str, int]) -> None:
 def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
     pkgs0 = get_pkgs(src_root)
     pkgs = {name: pkg for name, pkg in pkgs0.items() if name not in EXCLUDE_PACKAGES}
+    if "meld" in pkgs:
+        raise RuntimeError(
+            f"Not expecting to find a conda package 'meld' in {src_root}"
+        )
+    sorted_pkgs = sorted(pkgs.values(), key=lambda pkg: pkg.name)
+    pkgs_s = [f"{pkg.name}=={pkg.version}" for pkg in sorted_pkgs]
+    info(f"Copying packages: {pkgs_s}")
     for pkg in pkgs.values():
         for relpath, pkgpath in pkg.paths.items():
             src = src_root / relpath
@@ -158,10 +170,6 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
                 )
             if EXCLUDE_RE.match(relpath) and not INCLUDE_RE.match(relpath):
                 continue
-            if relpath == "bin/meld":
-                # Move bin/meld, which will not find the right python executable,
-                # to lib/meld
-                dst = dst_root / "lib/meld"
             if path_type in (PathType.HARDLINK, PathType.SOFTLINK):
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 copy2(src, dst, follow_symlinks=False)
@@ -169,6 +177,31 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> None:
                 dst.mkdir(parents=True, exist_ok=True)
             else:
                 assert False
+
+
+def extract_meld_package(meld_pkg: Path, dst_root: Path) -> None:
+    (site_packages,) = dst_root.glob("lib/python*/site-packages")
+    zf = ZipFile(meld_pkg)
+    (pkg_zi,) = [zi for zi in zf.filelist if zi.filename.startswith("pkg-")]
+    assert pkg_zi.filename.endswith(".zst")
+    zst = zf.read(pkg_zi)
+    tar_bytes = zstd.decompress(zst)
+    tf = TarFile(fileobj=io.BytesIO(tar_bytes))
+    members = tf.getnames()
+    assert "python-scripts/meld" in members
+    for member in members:
+        data_io = tf.extractfile(member)
+        assert data_io is not None
+        data = data_io.read()
+        if member == "python-scripts/meld":
+            # Put the bin/meld script, which will not find the right python executable,
+            # in lib/meld
+            dst = dst_root / "lib/meld"
+        else:
+            assert member.startswith("site-packages/")
+            dst = site_packages.parent / member
+            dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(data)
 
 
 def strip_elfs(root: Path):
@@ -223,6 +256,7 @@ def make_compressed_dir(uncompressed_root: Path, compressed_root: Path) -> None:
 
 def shrink_env(
     src_root: Path,
+    meld_pkg: Path,
     dst_root: Path,
     print_symlink_sizes: bool = False,
     compressed_dst: Path | None = None,
@@ -232,6 +266,8 @@ def shrink_env(
 
     info(f"Copying files from {src_root} to {dst_root}...")
     copy_without_excluded_packages(src_root, dst_root)
+    info(f"Extracting {meld_pkg}...")
+    extract_meld_package(meld_pkg, dst_root)
     info("Stripping debug symbols...")
     strip_elfs(dst_root)
 
@@ -284,6 +320,7 @@ def main():
         " the resulting archive",
     )
     parser.add_argument("src", type=Path)
+    parser.add_argument("meld_pkg", type=Path, help="The meld*.conda file")
     parser.add_argument("dst", type=Path, nargs="?")
     args = parser.parse_args()
 
@@ -298,7 +335,13 @@ def main():
         print_sizes(sizes)
 
     if args.dst is not None:
-        shrink_env(args.src, args.dst, args.print_symlink_sizes, args.compressed)
+        shrink_env(
+            args.src,
+            args.meld_pkg,
+            args.dst,
+            args.print_symlink_sizes,
+            args.compressed,
+        )
 
 
 if __name__ == "__main__":
