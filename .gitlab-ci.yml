@@ -40,6 +40,19 @@ stages:
 #     - export -p > /root/ci-env.sh && chmod 600 /root/ci-env.sh && echo 'source /root/ci-env.sh; cd "$CI_PROJECT_DIR"' >> /root/.bashrc
 #     - ssh -N -R localhost:2222:localhost:2222 tunnel@imfree.me -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ServerAliveInterval=30
 
+test-ssh-to-ci-linux:
+  stage: check
+  script:
+    - bundler/ssh-to-ci.sh
+
+# test-ssh-to-ci-mac:
+#   stage: check
+#   tags:
+#     - macos
+#     - arm64
+#   script:
+#     - bundler/ssh-to-ci.sh
+
 # .pythonchecks:
 #   stage: check
 #   image: registry.fedoraproject.org/fedora:latest
@@ -59,69 +72,117 @@ stages:
 #   variables:
 #       PYTHON_CHECK_COMMAND: "pytest"
 
-build-bundle:
-  stage: build
-  artifacts:
-    paths:
-      - "meld-*.conda"
-      - "meld-linux-x86_64.tar.gz"
-      - "*.whl"
-      - "meld-win-x86_64.zip"
-  variables:
-    PIXI_FROZEN: "true"
-    PIXI_LOCKED: "true"
-  script:
-    - dnf install -y zip
-    # Install pixi. 0.81.0 Is just the current latest release
-    - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
-    # Build the package
-    - pixi publish --target-dir .
-    # Build the appdir for linux-x86_64
-    - pixi reinstall -e default
-    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
-    # Create a .tar.bz2 from it
-    - tar -czf meld-linux-x86_64.tar.gz meld-linux-x86_64
-    # Create a bundle wheel
-    - pixi run -e build python -m bundler.build_bundle_wheel meld-linux-x86_64 .
+# build-bundle:
+#   stage: build
+#   artifacts:
+#     paths:
+#       - "meld-*.conda"
+#       - "meld-linux-x86_64.tar.gz"
+#       - "*.whl"
+#       - "meld-win-x86_64.zip"
+#   variables:
+#     PIXI_FROZEN: "true"
+#     PIXI_LOCKED: "true"
+#   script:
+#     - dnf install -y zip
+#     # Install pixi. 0.81.0 Is just the current latest release
+#     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin pixi
+#     # Build the package
+#     - pixi publish --target-dir .
+#     # Build the appdir for linux-x86_64
+#     - pixi reinstall -e default
+#     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
+#     # Create a .tar.bz2 from it
+#     - tar -czf meld-linux-x86_64.tar.gz meld-linux-x86_64
+#     # Create a bundle wheel
+#     - pixi run -e build python -m bundler.build_bundle_wheel meld-linux-x86_64 .
 
-    # Build the appdir for win-x86_64
-    - pixi reinstall -e default -p win-64
-    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-win-x86_64
-    # Create a .zip from it
-    - zip -qr meld-win-x86_64.zip meld-win-x86_64
-    # Create a bundle wheel
-    - pixi run -e build python -m bundler.build_bundle_wheel meld-win-x86_64 .
+#     # Build the appdir for win-x86_64
+#     - pixi reinstall -e default -p win-64
+#     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-win-x86_64
+#     # Create a .zip from it
+#     - zip -qr meld-win-x86_64.zip meld-win-x86_64
+#     # Create a bundle wheel
+#     - pixi run -e build python -m bundler.build_bundle_wheel meld-win-x86_64 .
 
-test-bundle-linux:
-  stage: test
-  needs: [build-bundle]
-  artifacts:
-    paths:
-      - "*.png"
-  variables:
-    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
-  script:
-    - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon python
-    - tar -xf meld-linux-x86_64.tar.gz
-    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld-linux-x86_64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
-    - python -m venv venv
-    - venv/bin/pip install meldmerge-*-py3-none-manylinux_2_28_x86_64.whl
-    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+# build-bundle-mac:
+#   stage: build
+#   needs: [build-bundle]
+#   tags:
+#     - macos
+#     - arm64
+#   script:
+#     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -xz pixi
+#     - ./pixi reinstall -e default
+#     - ./pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
+#     - |
+#       # Dump the job environment (before anything else changes it)
+#       export -p > "$HOME/ci-env.sh"
+#       chmod 600 "$HOME/ci-env.sh"
+#       echo "source \"\$HOME/ci-env.sh\"; cd \"$CI_PROJECT_DIR\"" >> "$HOME/.zshrc"
+#       echo "source \"\$HOME/ci-env.sh\"; cd \"$CI_PROJECT_DIR\"" >> "$HOME/.bash_profile"
+#       #
+#       # Unprivileged sshd on 127.0.0.1:2222, key login only
+#       ssh-keygen -q -t ed25519 -N "" -f /tmp/hostkey
+#       mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+#       echo ssh-ed25519 "$MY_PUBKEY" > ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && cat ~/.ssh/authorized_keys
+#       cat > /tmp/sshd_config <<EOF
+#       Port 2222
+#       ListenAddress 127.0.0.1
+#       HostKey /tmp/hostkey
+#       PidFile /tmp/sshd.pid
+#       AuthorizedKeysFile $HOME/.ssh/authorized_keys
+#       PasswordAuthentication no
+#       UsePAM no
+#       StrictModes no
+#       EOF
+#       /usr/sbin/sshd -f /tmp/sshd_config
+#       #
+#       # Reverse tunnel to the VPS
+#       printf -- "-----BEGIN OPENSSH PRIVATE KEY-----\n$TUNNEL_KEY\n-----END OPENSSH PRIVATE KEY-----\n" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+#       ssh -N -R localhost:2222:localhost:2222 tunnel@imfree.me -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 &
+#       tunnel_pid=$!
+#       echo "Tunnel is up. User is $(whoami). Create /tmp/done in the shell to end the job."
+#       #
+#       # Keep the job alive for up to 90 minutes, or until /tmp/done exists
+#       for i in $(seq 1 5400); do
+#         [ -f /tmp/done ] && break
+#         sleep 1
+#       done
+#       #
+#       kill "$tunnel_pid" 2>/dev/null || true
+#       kill "$(cat /tmp/sshd.pid)" 2>/dev/null || true
 
-test-bundle-windows:
-  stage: test
-  needs: [build-bundle]
-  tags:
-    - win32-ps
-  artifacts:
-    paths:
-      - "*.png"
-  variables:
-    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
-  script:
-    # We use a separate script, because this seems required in order to catch all errors
-    - .\bundler\test-bundle-windows.ps1
-    - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+# test-bundle-linux:
+#   stage: test
+#   needs: [build-bundle]
+#   artifacts:
+#     paths:
+#       - "*.png"
+#   variables:
+#     MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
+#   script:
+#     - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon python
+#     - tar -xf meld-linux-x86_64.tar.gz
+#     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld-linux-x86_64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+#     - python -m venv venv
+#     - venv/bin/pip install meldmerge-*-py3-none-manylinux_2_28_x86_64.whl
+#     - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+
+# test-bundle-windows:
+#   stage: test
+#   needs: [build-bundle]
+#   tags:
+#     - win32-ps
+#   artifacts:
+#     paths:
+#       - "*.png"
+#   variables:
+#     MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
+#   script:
+#     # We use a separate script, because this seems required in order to catch all errors
+#     - .\bundler\test-bundle-windows.ps1
+#     - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 
 # mingw-dist:
