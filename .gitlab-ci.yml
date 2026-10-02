@@ -27,10 +27,10 @@ stages:
 #   needs:
 #     - 'flatpak'
 
-test-ssh-to-ci-linux:
-  stage: check
-  script:
-    - bundler/ssh-to-ci.sh
+# test-ssh-to-ci-linux:
+#   stage: check
+#   script:
+#     - bundler/ssh-to-ci.sh
 
 # test-ssh-to-ci-mac:
 #   stage: check
@@ -92,53 +92,31 @@ test-ssh-to-ci-linux:
 #     # Create a bundle wheel
 #     - pixi run -e build python -m bundler.build_bundle_wheel meld-win-x86_64 .
 
-# build-bundle-mac:
-#   stage: build
-#   needs: [build-bundle]
-#   tags:
-#     - macos
-#     - arm64
-#   script:
-#     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -xz pixi
-#     - ./pixi reinstall -e default
-#     - ./pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
-#     - |
-#       # Dump the job environment (before anything else changes it)
-#       export -p > "$HOME/ci-env.sh"
-#       chmod 600 "$HOME/ci-env.sh"
-#       echo "source \"\$HOME/ci-env.sh\"; cd \"$CI_PROJECT_DIR\"" >> "$HOME/.zshrc"
-#       echo "source \"\$HOME/ci-env.sh\"; cd \"$CI_PROJECT_DIR\"" >> "$HOME/.bash_profile"
-#       #
-#       # Unprivileged sshd on 127.0.0.1:2222, key login only
-#       ssh-keygen -q -t ed25519 -N "" -f /tmp/hostkey
-#       mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
-#       echo ssh-ed25519 "$MY_PUBKEY" > ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && cat ~/.ssh/authorized_keys
-#       cat > /tmp/sshd_config <<EOF
-#       Port 2222
-#       ListenAddress 127.0.0.1
-#       HostKey /tmp/hostkey
-#       PidFile /tmp/sshd.pid
-#       AuthorizedKeysFile $HOME/.ssh/authorized_keys
-#       PasswordAuthentication no
-#       UsePAM no
-#       StrictModes no
-#       EOF
-#       /usr/sbin/sshd -f /tmp/sshd_config
-#       #
-#       # Reverse tunnel to the VPS
-#       printf -- "-----BEGIN OPENSSH PRIVATE KEY-----\n$TUNNEL_KEY\n-----END OPENSSH PRIVATE KEY-----\n" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
-#       ssh -N -R localhost:2222:localhost:2222 tunnel@imfree.me -o StrictHostKeyChecking=accept-new -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 &
-#       tunnel_pid=$!
-#       echo "Tunnel is up. User is $(whoami). Create /tmp/done in the shell to end the job."
-#       #
-#       # Keep the job alive for up to 90 minutes, or until /tmp/done exists
-#       for i in $(seq 1 5400); do
-#         [ -f /tmp/done ] && break
-#         sleep 1
-#       done
-#       #
-#       kill "$tunnel_pid" 2>/dev/null || true
-#       kill "$(cat /tmp/sshd.pid)" 2>/dev/null || true
+build-bundle-mac:
+  stage: build
+  # needs: [build-bundle]
+  tags:
+    - macos
+    - arm64
+  script:
+    - mkdir -p ~/.local/bin
+    - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
+    - export PATH=~/.local/bin:$PATH
+
+    # XXX TODO: remove this, this is only to remove the dependency. Build the conda package.
+    - pixi publish --target-dir .
+    # See https://github.com/conda-forge/gtksourceview-feedstock/issues/9
+    # We need a newer version of gtksourceview, since the typelib is missing in 5.18.0,
+    # But currently newer versions depend on libintl, which isn't available on linux.
+    # So we remove this platform temporarily.
+    - pixi workspace platform remove linux-64
+    - pixi update gtksourceview
+    - pixi reinstall -e default
+    - bundler/ssh-to-ci.sh
+    # ./pixi add $(realpath meld-3.99.0-pyh4616a5c_0.conda)
+    # MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=10000 ./pixi run meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
+    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=10000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 # test-bundle-linux:
 #   stage: test

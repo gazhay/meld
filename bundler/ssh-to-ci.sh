@@ -51,6 +51,10 @@ bindkey '^[OF'  end-of-line
 bindkey '^[[1~' beginning-of-line
 bindkey '^[[4~' end-of-line
 bindkey '^[[3~' delete-char
+bindkey '^[[1;5D' backward-word
+bindkey '^[[1;5C' forward-word
+bindkey '^[[5D'   backward-word
+bindkey '^[[5C'   forward-word
 autoload -U up-line-or-beginning-search down-line-or-beginning-search
 zle -N up-line-or-beginning-search
 zle -N down-line-or-beginning-search
@@ -67,6 +71,10 @@ cat >> "$HOME/.inputrc" <<'EOF'
 "\e[1~": beginning-of-line
 "\e[4~": end-of-line
 "\e[3~": delete-char
+"\e[1;5D": backward-word
+"\e[1;5C": forward-word
+"\e[5D": backward-word
+"\e[5C": forward-word
 "\e[A": history-search-backward
 "\e[B": history-search-forward
 "\eOA": history-search-backward

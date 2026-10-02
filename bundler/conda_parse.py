@@ -16,6 +16,7 @@ class PathType(Enum):
 class Platform(Enum):
     LINUX = "linux"
     WIN = "win"
+    OSX = "osx"
 
 
 @dataclass

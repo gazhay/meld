@@ -326,7 +326,7 @@ def shrink_env(
     info(f"Extracting {meld_pkg}...")
     extract_meld_package(meld_pkg, dst_root, platform)
 
-    if platform != WIN:
+    if platform == Platform.LINUX:
         info("Stripping debug symbols...")
         strip_elfs(dst_root)
 
