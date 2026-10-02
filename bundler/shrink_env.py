@@ -25,7 +25,7 @@ from .remove_shlib_symlinks import (
 
 WIN = Platform.WIN
 
-COMPRESSION_LEVEL = 9
+COMPRESSION_LEVEL = 6
 ELF_MAGIC = b"\x7fELF"
 
 ENTRYPOINT_SCRIPT = """\
@@ -82,7 +82,9 @@ EXCLUDE_PACKAGES = {
     "libcups",
     "libsqlite",
     "ncurses",
+    "openssl",
     "tk",
+    "tzdata",
 }
 
 # If the path from the root of the env matches one of EXCLUDE_PATTERNS and doesn't
@@ -93,6 +95,7 @@ DYNMODS = "_decimal _sha3 _pickle _sqlite _ssl _curses _curses_panel".split()
 EXCLUDE_PATTERNS = [
     "bin/**",
     "Scripts/**",
+    "Library/bin/*.exe",
     "conda-meta/**",
     "**/include/**",
     "**/lib/icu/**",  # contains a symlink to a directory, not needed
@@ -105,9 +108,9 @@ EXCLUDE_PATTERNS = [
     "libexec/**",
     "sbin/**",
     "**/share/doc/**",
-    "**/share/icons/Adwaita/cursors/progress",  # heavy cursor
-    "**/share/icons/Adwaita/cursors/wait",  # heavy cursor
-    "**/share/icons/Adwaita/cursors/watch",  # heavy cursor
+    "**/share/icons/Adwaita/cursors/progress*",  # heavy cursor
+    "**/share/icons/Adwaita/cursors/wait*",  # heavy cursor
+    "**/share/icons/Adwaita/cursors/watch*",  # heavy cursor
     "**/share/icons/Adwaits/symbolic/status/**",  # ~1MB, not used
     "**/share/locale/**",
     "**/share/man/**",
@@ -391,7 +394,11 @@ def main():
 
     if args.print_pkg_sizes:
         pkgs, _platform = get_pkgs(args.src)
-        sizes = {pkg.name: get_pkg_compressed_size(args.src, pkg) for pkg in pkgs}
+        sizes = {
+            pkg.name: get_pkg_compressed_size(args.src, pkg)
+            for pkg in pkgs
+            if pkg.name not in EXCLUDE_PACKAGES
+        }
         print_sizes(sizes)
 
     if args.dst is not None:
