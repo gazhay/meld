@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import glob
 import io
+import json
 import logging
 import re
 import zlib
@@ -14,7 +15,7 @@ from tarfile import TarFile
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
 
-from .conda_parse import PathType, Pkg, Platform, get_pkgs
+from .conda_parse import Arch, PathType, Pkg, Platform, get_pkgs
 from .remove_shlib_symlinks import (
     get_shlib_re,
     get_shlib_subs,
@@ -78,11 +79,11 @@ exit /b %ERRORLEVEL%
 EXCLUDE_PACKAGES = {
     "bzip2",
     "ca-certificates",
-    "krb5",
+    # "krb5",    causes failure on mac
     "libcups",
     "libsqlite",
     "ncurses",
-    "openssl",
+    # "openssl",  causes failure on mac
     "tk",
     "tzdata",
 }
@@ -178,8 +179,16 @@ def print_sizes(sizes: dict[str, int]) -> None:
         print(f"{size:>10,}  {size / total_size:>5.1%}  {name}")
 
 
-def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> Platform:
-    pkgs0, platform = get_pkgs(src_root)
+def write_platform_json(dst_root: Path, platform: Platform, arch: Arch) -> None:
+    platform_d = {"platform": platform.value, "arch": arch.value}
+    platform_s = json.dumps(platform_d, indent=2)
+    (dst_root / "etc/platform.json").write_text(platform_s)
+
+
+def copy_without_excluded_packages(
+    src_root: Path, dst_root: Path
+) -> tuple[Platform, Arch]:
+    pkgs0, platform, arch = get_pkgs(src_root)
     pkgs = [pkg for pkg in pkgs0 if pkg.name not in EXCLUDE_PACKAGES]
     if any(pkg.name == "meld" for pkg in pkgs):
         raise RuntimeError(
@@ -208,7 +217,8 @@ def copy_without_excluded_packages(src_root: Path, dst_root: Path) -> Platform:
                 assert False
     share_dir = "Library/share" if platform == WIN else "share"
     check_call(["glib-compile-schemas", dst_root / share_dir / "glib-2.0/schemas"])
-    return platform
+    write_platform_json(dst_root, platform, arch)
+    return platform, arch
 
 
 def fix_fonts_conf(dst_root: Path, platform: Platform) -> None:
@@ -294,6 +304,7 @@ def fix_shlib_names(
         dst_data = sub_shlibs_in_something(subs, shlib_re, src_data)
         if dst_data != src_data:
             path.write_bytes(dst_data)
+            check_call(["codesign", "--force", "--sign", "-", path])
 
 
 def make_compressed_dir(uncompressed_root: Path, compressed_root: Path) -> None:
@@ -321,15 +332,19 @@ def shrink_env(
         raise RuntimeError(f"Destination {dst_root} is not empty")
 
     info(f"Copying files from {src_root} to {dst_root}...")
-    platform = copy_without_excluded_packages(src_root, dst_root)
+    platform, arch = copy_without_excluded_packages(src_root, dst_root)
     fix_fonts_conf(dst_root, platform)
     info(f"Extracting {meld_pkg}...")
     extract_meld_package(meld_pkg, dst_root, platform)
 
     if platform == Platform.LINUX:
+        # On Mac, stripping all .dylib and .so files reduced the zipped size from 57MB
+        # to 56MB, and each such change required calling codesign, so for now I just
+        # do it for Linux.
         info("Stripping debug symbols...")
         strip_elfs(dst_root)
 
+    if platform in (Platform.LINUX, Platform.OSX):
         libdir = dst_root / "lib"
         shlib_symlinks = get_shlib_symlinks(libdir)
         subs = get_shlib_subs(shlib_symlinks)

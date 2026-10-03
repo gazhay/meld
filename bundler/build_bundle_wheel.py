@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from logging import warning
@@ -11,10 +12,19 @@ from shutil import copy, copytree, rmtree
 from subprocess import check_call
 from tempfile import mkdtemp
 
+from .conda_parse import Arch, Platform
+
 try:
     import tomllib
 except ImportError:
     tomllib = None
+
+PLATFORM_TAG = {
+    (Platform.LINUX, Arch.X86_64): "manylinux_2_28_x86_64",
+    (Platform.WIN, Arch.X86_64): "win_amd64",
+    (Platform.OSX, Arch.ARM64): "macosx_11_0_arm64",
+    (Platform.OSX, Arch.X86_64): "macosx_10_12_x86_64",
+}
 
 mydir = Path(__file__).absolute().parent
 repodir = mydir.parent
@@ -66,11 +76,23 @@ def replace(s: str, old: str, new: str) -> str:
     return r
 
 
+def get_platform(appdir: Path) -> tuple[Platform, Arch]:
+    platform_data_s = (appdir / "etc/platform.json").read_text()
+    platform_data_d = json.loads(platform_data_s)
+    platform_s = platform_data_d["platform"]
+    assert isinstance(platform_s, str)
+    platform = Platform(platform_s)
+    arch_s = platform_data_d["arch"]
+    assert isinstance(arch_s, str)
+    arch = Arch(arch_s)
+    return platform, arch
+
+
 def build_bundle_wheel(
     appdir: Path, outdir: Path, tmpdir: Path | None = None, remove_tmpdir: bool = True
 ):
     verify_bundle_pyproject()
-    is_win = (appdir / "python.exe").exists()
+    platform, arch = get_platform(appdir)
 
     if tmpdir is None:
         tmpdir = Path(mkdtemp(prefix="meld-"))
@@ -79,8 +101,7 @@ def build_bundle_wheel(
 
     pyproject0 = mydir.joinpath("bundle-pyproject.toml").read_text()
     pyproject1 = replace(pyproject0, "{VERSION}", MELD_VERSION)
-    platform = "win_amd64" if is_win else "manylinux_2_28_x86_64"
-    pyproject = replace(pyproject1, "{PLATFORM_TAG}", platform)
+    pyproject = replace(pyproject1, "{PLATFORM_TAG}", PLATFORM_TAG[platform, arch])
     tmpdir.joinpath("pyproject.toml").write_text(pyproject)
 
     copy(repodir / "README.md", tmpdir)
@@ -89,7 +110,9 @@ def build_bundle_wheel(
 
     pkgdir = tmpdir / "meld_bundle"
     pkgdir.mkdir()
-    bundle_shim = "bundle_shim_windows.py" if is_win else "bundle_shim.py"
+    bundle_shim = (
+        "bundle_shim_windows.py" if platform == Platform.WIN else "bundle_shim.py"
+    )
     copy(mydir / bundle_shim, pkgdir / "__init__.py")
 
     copytree(appdir, pkgdir / "appdir", symlinks=True)

@@ -19,6 +19,11 @@ class Platform(Enum):
     OSX = "osx"
 
 
+class Arch(Enum):
+    X86_64 = "x86_64"
+    ARM64 = "arm64"
+
+
 @dataclass
 class PkgPath:
     path_type: PathType
@@ -31,6 +36,7 @@ class Pkg:
     name: str
     version: str
     platform: Platform | None
+    arch: Arch | None
     depends: list[str]
     paths: dict[str, PkgPath]
 
@@ -46,6 +52,12 @@ def parse_pkg(data: dict[str, object]) -> Pkg:
         platform = Platform(_platform)
     else:
         platform = None
+    if "arch" in data:
+        _arch = data["arch"]
+        assert isinstance(_arch, str)
+        arch = Arch(_arch)
+    else:
+        arch = None
     depends = data["depends"]
     assert isinstance(depends, list) and all(isinstance(x, str) for x in depends)
     files = data["files"]
@@ -66,10 +78,10 @@ def parse_pkg(data: dict[str, object]) -> Pkg:
         assert isinstance(size_in_bytes, int)
         paths[_path] = PkgPath(path_type, sha256, size_in_bytes)
     assert set(files) == set(paths.keys())
-    return Pkg(name, version, platform, depends, paths)
+    return Pkg(name, version, platform, arch, depends, paths)
 
 
-def get_pkgs(env_root: Path) -> tuple[list[Pkg], Platform]:
+def get_pkgs(env_root: Path) -> tuple[list[Pkg], Platform, Arch]:
     r: list[Pkg] = []
     for fn in env_root.joinpath("conda-meta").glob("*.json"):
         data = json.loads(fn.read_text())
@@ -80,8 +92,12 @@ def get_pkgs(env_root: Path) -> tuple[list[Pkg], Platform]:
     assert len(set(all_paths)) == len(all_paths), (
         "There is a path which belongs to multiple packages"
     )
-    platforms = {pkg.platform for pkg in r if pkg.platform}
-    if len(platforms) != 1:
-        raise RuntimeError(f"Expecting to find exactly one platform, found {platforms}")
-    (platform,) = platforms
-    return r, platform
+    platform_archs = {
+        (pkg.platform, pkg.arch) for pkg in r if pkg.platform and pkg.arch
+    }
+    if len(platform_archs) != 1:
+        raise RuntimeError(
+            f"Expecting to find exactly one platform, found {platform_archs}"
+        )
+    ((platform, arch),) = platform_archs
+    return r, platform, arch

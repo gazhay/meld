@@ -113,10 +113,14 @@ build-bundle-mac:
     - pixi update gtksourceview
     - pixi reinstall -e default
     - bundler/ssh-to-ci.sh
-    # ./pixi add $(realpath meld-3.99.0-pyh4616a5c_0.conda)
-    # MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=10000 ./pixi run meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    # pixi add $(realpath meld-3.99.0-pyh4616a5c_0.conda)
+    # MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 pixi run meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
-    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=10000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - pixi run -e build python -m bundler.build_bundle_wheel appdir .
+    - python3 -m venv venv
+    - venv/bin/pip install meldmerge-*-py3-*.whl
+    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 # test-bundle-linux:
 #   stage: test
