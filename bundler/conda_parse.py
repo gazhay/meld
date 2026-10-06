@@ -88,7 +88,7 @@ def get_pkgs(env_root: Path) -> tuple[list[Pkg], Platform, Arch]:
         pkg = parse_pkg(data)
         r.append(pkg)
     r.sort(key=lambda pkg: pkg.name)
-    all_paths = [path for pkg in r for path in pkg.paths.keys()]
+    all_paths = [path for pkg in r for path in pkg.paths]
     assert len(set(all_paths)) == len(all_paths), (
         "There is a path which belongs to multiple packages"
     )

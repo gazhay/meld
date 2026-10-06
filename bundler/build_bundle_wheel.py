@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
-from logging import warning
 from pathlib import Path
 from shlex import quote
 from shutil import copy, copytree, rmtree
@@ -18,6 +18,9 @@ try:
     import tomllib
 except ImportError:
     tomllib = None
+
+logger = logging.getLogger(__name__)
+warning = logger.warning
 
 PLATFORM_TAG = {
     (Platform.LINUX, Arch.X86_64): "manylinux_2_28_x86_64",
