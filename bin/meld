@@ -269,7 +269,7 @@ def check_requirements():
     try:
         for r in requirements:
             r.check()
-    except AttributeError, ImportError, RuntimeError, ValueError:
+    except (AttributeError, ImportError, RuntimeError, ValueError):
         show_error_and_exit(_("Meld requires %s.") % str(r))
 
 
@@ -469,15 +469,6 @@ def ci_screenshot():
     import cairo
     from gi.repository import Gio, GLib, Gtk
 
-    from meld.settings import get_settings
-
-    turn_on_highlight_s = os.environ.get("MELD_TURN_ON_HIGHLIGHT_SYNTAX", "0")
-    allowed_vals = {"0": False, "false": False, "1": True, "true": True}
-    turn_on_highlight = allowed_vals[turn_on_highlight_s.lower()]
-    if turn_on_highlight:
-        settings = get_settings()
-        settings.set_boolean("highlight-syntax", True)
-
     screenshot_filename = os.environ.get("MELD_SCREENSHOT_AND_EXIT")
     if not screenshot_filename:
         return
@@ -520,7 +511,7 @@ def run_application():
             from gi.repository import GLibUnix
 
             signal_add = GLibUnix.signal_add
-        except ImportError, AttributeError, ValueError:
+        except (ImportError, AttributeError, ValueError):
             # Support glib <= 2.86
             signal_add = GLib.unix_signal_add
 

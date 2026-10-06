@@ -116,11 +116,11 @@ build-bundle-mac:
     - pixi update gtksourceview
     - pixi reinstall -e default
     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
-    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - pixi run -e build python -m bundler.build_bundle_wheel appdir .
     - python3 -m venv venv
     - venv/bin/pip install meldmerge-*-py3-*.whl
-    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+    - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 test-bundle-linux:
   stage: test
@@ -128,8 +128,6 @@ test-bundle-linux:
   artifacts:
     paths:
       - "*.png"
-  variables:
-    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
   script:
     - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon python
     - tar -xf meld-linux-x86_64.tar.gz
@@ -146,8 +144,6 @@ test-bundle-windows:
   artifacts:
     paths:
       - "*.png"
-  variables:
-    MELD_TURN_ON_HIGHLIGHT_SYNTAX: "1"
   script:
     # We use a separate script, because this seems required in order to catch all errors
     - .\bundler\test-bundle-windows.ps1
