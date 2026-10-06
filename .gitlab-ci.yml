@@ -7,8 +7,8 @@ include:
 
 stages:
   - check
-  - test
   - build
+  - test
   - deploy
   - release
 
