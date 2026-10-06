@@ -184,12 +184,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/epoxy-1.5.10-h8616949_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/fontconfig-2.18.3-h7f3b9c9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freetype-2.14.3-h694c41f_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-hd115831_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.17-hd115831_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.44.8-ha3e70bd_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.88.3-h69987c9_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.90.0-he718cb3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/graphite2-1.3.15-h2fb4741_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.22.5-h6aa0eae_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.20.0-h17d1590_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.24.0-h6aa0eae_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.22.0-h281e0a0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/harfbuzz-14.4.0-h694c41f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/hicolor-icon-theme-0.17-h694c41f_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/icu-78.3-py313hbf1d544_2.conda
@@ -209,7 +209,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libfyaml-0.9.6-hd115831_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgettextpo-0.25.1-h3184127_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgirepository-1.86.0-h5009137_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.88.3-h7e55108_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.90.0-h7e55108_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgraphene-1.10.8-hb91e695_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-14.4.0-h2974713_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-devel-14.4.0-h2974713_1.conda
@@ -274,12 +274,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/epoxy-1.5.10-hc919400_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fontconfig-2.18.3-h81aa574_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freetype-2.14.3-hce30654_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hb001647_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.17-hb001647_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.44.8-h5867e2c_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.88.3-hf080417_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.90.0-h06d1d6c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/graphite2-1.3.15-h784d473_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.22.5-h7a6b1a4_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.20.0-hb285bd5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.24.0-h7a6b1a4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.22.0-h0490168_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harfbuzz-14.4.0-hce30654_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/hicolor-icon-theme-0.17-hce30654_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
@@ -299,7 +299,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libfyaml-0.9.6-hb001647_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgettextpo-0.25.1-h493aca8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgirepository-1.86.0-hccdf2ab_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.88.3-hccd281b_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.90.0-hccd281b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgraphene-1.10.8-h77cb426_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-14.4.0-hcda0f7c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-devel-14.4.0-hcda0f7c_1.conda
@@ -560,12 +560,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/epoxy-1.5.10-h8616949_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/fontconfig-2.18.3-h7f3b9c9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freetype-2.14.3-h694c41f_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-hd115831_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.17-hd115831_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.44.8-ha3e70bd_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.88.3-h69987c9_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.90.0-he718cb3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/graphite2-1.3.15-h2fb4741_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.22.5-h6aa0eae_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.20.0-h17d1590_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.24.0-h6aa0eae_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.22.0-h281e0a0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/harfbuzz-14.4.0-h694c41f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/hicolor-icon-theme-0.17-h694c41f_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/icu-78.3-py313hbf1d544_2.conda
@@ -585,7 +585,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libfyaml-0.9.6-hd115831_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgettextpo-0.25.1-h3184127_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgirepository-1.86.0-h5009137_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.88.3-h7e55108_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.90.0-h7e55108_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgraphene-1.10.8-hb91e695_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-14.4.0-h2974713_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-devel-14.4.0-h2974713_1.conda
@@ -637,12 +637,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/epoxy-1.5.10-hc919400_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fontconfig-2.18.3-h81aa574_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freetype-2.14.3-hce30654_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hb001647_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.17-hb001647_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.44.8-h5867e2c_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.88.3-hf080417_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.90.0-h06d1d6c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/graphite2-1.3.15-h784d473_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.22.5-h7a6b1a4_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.20.0-hb285bd5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.24.0-h7a6b1a4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.22.0-h0490168_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harfbuzz-14.4.0-hce30654_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/hicolor-icon-theme-0.17-hce30654_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
@@ -662,7 +662,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libfyaml-0.9.6-hb001647_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgettextpo-0.25.1-h493aca8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgirepository-1.86.0-hccdf2ab_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.88.3-hccd281b_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.90.0-hccd281b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgraphene-1.10.8-h77cb426_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-14.4.0-hcda0f7c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-devel-14.4.0-hcda0f7c_1.conda
@@ -1548,12 +1548,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/epoxy-1.5.10-h8616949_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/fontconfig-2.18.3-h7f3b9c9_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/freetype-2.14.3-h694c41f_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-hd115831_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.17-hd115831_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/gdk-pixbuf-2.44.8-ha3e70bd_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.88.3-h69987c9_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.90.0-he718cb3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/graphite2-1.3.15-h2fb4741_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.22.5-h6aa0eae_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.20.0-h17d1590_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.24.0-h6aa0eae_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.22.0-h281e0a0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/harfbuzz-14.4.0-h694c41f_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/hicolor-icon-theme-0.17-h694c41f_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/icu-78.3-py313hbf1d544_2.conda
@@ -1573,7 +1573,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libfyaml-0.9.6-hd115831_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgettextpo-0.25.1-h3184127_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgirepository-1.86.0-h5009137_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.88.3-h7e55108_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.90.0-h7e55108_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libgraphene-1.10.8-hb91e695_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-14.4.0-h2974713_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-64/libharfbuzz-devel-14.4.0-h2974713_1.conda
@@ -1658,12 +1658,12 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/epoxy-1.5.10-hc919400_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fontconfig-2.18.3-h81aa574_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/freetype-2.14.3-hce30654_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hb001647_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.17-hb001647_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gdk-pixbuf-2.44.8-h5867e2c_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.88.3-hf080417_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.90.0-h06d1d6c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/graphite2-1.3.15-h784d473_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.22.5-h7a6b1a4_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.20.0-hb285bd5_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.24.0-h7a6b1a4_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.22.0-h0490168_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/harfbuzz-14.4.0-hce30654_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/hicolor-icon-theme-0.17-hce30654_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.3-py310h579977c_2.conda
@@ -1683,7 +1683,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libfyaml-0.9.6-hb001647_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgettextpo-0.25.1-h493aca8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgirepository-1.86.0-hccdf2ab_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.88.3-hccd281b_4.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.90.0-hccd281b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libgraphene-1.10.8-h77cb426_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-14.4.0-hcda0f7c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libharfbuzz-devel-14.4.0-hcda0f7c_1.conda
@@ -5156,17 +5156,6 @@ packages:
     - libfreetype6 >=2.14.3
   size: 174876
   timestamp: 1786641723387
-- conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.16-hd115831_2.conda
-  sha256: 5e5e7a37641bc29337c5cd57cc0913feb1ad191062241a96c683e493b030a1fb
-  md5: 06918d0bd23bc69fcb40b93cdd1ec4ad
-  depends:
-  - __osx >=11.0
-  license: LGPL-2.1-or-later
-  run_exports:
-    weak:
-    - fribidi >=1.0.16,<2.0a0
-  size: 62099
-  timestamp: 1788386019473
 - conda: https://conda.anaconda.org/conda-forge/osx-64/fribidi-1.0.17-hd115831_0.conda
   sha256: 2d00bba4debd24538f030464507ed73369483ec69c02b9cef110945b9569ffa4
   md5: de3916de5b702b60b8e1a860869ecfdd
@@ -5196,18 +5185,6 @@ packages:
     - gdk-pixbuf >=2.44.8,<3.0a0
   size: 554833
   timestamp: 1788491118420
-- conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.88.3-h69987c9_4.conda
-  sha256: 94858c86832ad6beb95432e926c9603774cab918424ba3a0570f2c1ef15b3bcc
-  md5: 3df2ed999abcfebe616d1938f740a168
-  depends:
-  - libglib ==2.88.3 h7e55108_4
-  - libffi
-  - __osx >=11.0
-  - libintl >=0.25.1,<1.0a0
-  license: LGPL-2.1-or-later
-  run_exports: {}
-  size: 214019
-  timestamp: 1789008852429
 - conda: https://conda.anaconda.org/conda-forge/osx-64/glib-tools-2.90.0-he718cb3_0.conda
   sha256: dc45ed9bb0f7b9014167177b94f9b82c58ff471345983e7a7c4462bd8347d679
   md5: 676efb4acf2e7279104c32d4154c2bd2
@@ -5233,43 +5210,6 @@ packages:
     - graphite2 >=1.3.15,<2.0a0
   size: 91460
   timestamp: 1786118565040
-- conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.22.5-h6aa0eae_0.conda
-  sha256: a60a7b68755e39002daa730b41528ddcfb7cde6426f7fcc42502ed93b98dbca1
-  md5: 2135e01b25582e83405b8523c7a4c9e8
-  depends:
-  - hicolor-icon-theme
-  - pango
-  - libgraphene
-  - fribidi
-  - fontconfig
-  - glib-tools
-  - __osx >=11.0
-  - libcxx >=21
-  - libintl >=0.25.1,<1.0a0
-  - libasprintf >=0.25.1,<1.0a0
-  - libgettextpo >=0.25.1,<1.0a0
-  - libtiff >=4.7.2,<4.8.0a0
-  - librsvg >=2.62.3,<3.0a0
-  - cairo >=1.18.4,<2.0a0
-  - libjpeg-turbo >=3.2.0,<4.0a0
-  - libfreetype >=2.14.3
-  - libfreetype6 >=2.14.3
-  - gdk-pixbuf >=2.44.8,<3.0a0
-  - libpng >=1.6.58,<1.7.0a0
-  - libglib >=2.88.3,<3.0a0
-  - libharfbuzz >=14.4.0
-  - libzlib >=1.3.2,<2.0a0
-  - epoxy >=1.5.10,<1.6.0a0
-  - libvulkan-loader >=1.4.357.0,<2.0a0
-  - pango >=1.58.2,<2.0a0
-  license: LGPL-2.0-or-later
-  license_family: LGPL
-  run_exports:
-    weak:
-    - gtk4 >=4.22.5,<5.0a0
-    - adwaita-icon-theme
-  size: 24225355
-  timestamp: 1789076899522
 - conda: https://conda.anaconda.org/conda-forge/osx-64/gtk4-4.24.0-h6aa0eae_0.conda
   sha256: 4b37a54bf4a12e1dca9cd6056771f5e60bdd56c3b2b43fc2104643140e4cecd7
   md5: 1aa763a7794bbc7f812d3c7e86b78009
@@ -5307,32 +5247,6 @@ packages:
     - adwaita-icon-theme
   size: 21744041
   timestamp: 1789855959268
-- conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.20.0-h17d1590_0.conda
-  sha256: 036e46fb81e73dfbd2d2f791ba21c7ea9d42966fd77967da3e27a68017323f0f
-  md5: 1a9fb4b59ab3badf698e1b3e3483ff3c
-  depends:
-  - libgraphene
-  - cairo
-  - gdk-pixbuf
-  - libintl
-  - pcre2
-  - __osx >=11.0
-  - fontconfig >=2.17.1,<3.0a0
-  - fonts-conda-ecosystem
-  - pango >=1.56.4,<2.0a0
-  - libfreetype >=2.14.2
-  - libglib >=2.86.4,<3.0a0
-  - libxml2
-  - libxml2-16 >=2.15.2
-  - gtk4 >=4.20.3,<5.0a0
-  - fribidi >=1.0.16,<2.0a0
-  license: LGPL-2.0-or-later
-  license_family: LGPL
-  run_exports:
-    weak:
-    - gtksourceview >=5.20.0,<5.21.0a0
-  size: 792425
-  timestamp: 1773743541205
 - conda: https://conda.anaconda.org/conda-forge/osx-64/gtksourceview-5.22.0-h281e0a0_0.conda
   sha256: 620d0a266401d1b5e38d395a64c6d30223d4ceaf7a6c1ebdba2509dbce19c6df
   md5: cc4c6725e058954fc3d63ceb6bda4f38
@@ -5673,24 +5587,6 @@ packages:
   run_exports: {}
   size: 129439
   timestamp: 1788834814375
-- conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.88.3-h7e55108_4.conda
-  sha256: 18d86429d453bb86e59f5a5a6f6c192ea656b019667b5c4e72263f9c6551750f
-  md5: 13c5ec48b6e92cda35330224ee591502
-  depends:
-  - __osx >=11.0
-  - pcre2 >=10.47,<10.48.0a0
-  - libzlib >=1.3.2,<2.0a0
-  - libffi >=3.7.0,<3.8.0a0
-  - libiconv >=1.18,<2.0a0
-  - libintl >=0.25.1,<1.0a0
-  constrains:
-  - glib >2.66
-  license: LGPL-2.1-or-later
-  run_exports:
-    weak:
-    - libglib >=2.88.3,<3.0a0
-  size: 4520406
-  timestamp: 1789008852429
 - conda: https://conda.anaconda.org/conda-forge/osx-64/libglib-2.90.0-h7e55108_0.conda
   sha256: 68091b433dfa7105c294be490ab35803e287d9c50190e9f6654d2c209352549e
   md5: 07a28c6afa037bccc9f8f4ee15de4b33
@@ -6628,17 +6524,6 @@ packages:
     - libfreetype6 >=2.14.3
   size: 175388
   timestamp: 1786641016583
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.16-hb001647_2.conda
-  sha256: aff7bd01037dfbacb0661ef0435a224fe9fcda1d624895fb336107dd68e5bb34
-  md5: b4397592e234554333719778bb01169e
-  depends:
-  - __osx >=11.0
-  license: LGPL-2.1-or-later
-  run_exports:
-    weak:
-    - fribidi >=1.0.16,<2.0a0
-  size: 62379
-  timestamp: 1788385614707
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/fribidi-1.0.17-hb001647_0.conda
   sha256: 803e78ec4a832a646dae842f09de0bc04acd2613deafa9b11d1970399d24d163
   md5: 29b021cee334af0050bdca46bada6e0e
@@ -6668,18 +6553,6 @@ packages:
     - gdk-pixbuf >=2.44.8,<3.0a0
   size: 552802
   timestamp: 1788490405006
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.88.3-hf080417_4.conda
-  sha256: 4997b9dcf6f5d535d31e12f7d0e21bd5bdf69706438394c67a8b3b87a42bfc9e
-  md5: 2d7d4bcc744998ceb6992c20479299fa
-  depends:
-  - libglib ==2.88.3 hccd281b_4
-  - libffi
-  - __osx >=11.0
-  - libintl >=0.25.1,<1.0a0
-  license: LGPL-2.1-or-later
-  run_exports: {}
-  size: 202490
-  timestamp: 1789008695203
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/glib-tools-2.90.0-h06d1d6c_0.conda
   sha256: 4c0cd7642611222bc573e93ac761b811839b015e4d0d968ae2e880b944e8b1a9
   md5: 62aed33caa374a6807ba9b2780603b70
@@ -6705,43 +6578,6 @@ packages:
     - graphite2 >=1.3.15,<2.0a0
   size: 86493
   timestamp: 1786118637573
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.22.5-h7a6b1a4_0.conda
-  sha256: ad9385ccbff2c406c55998d187e078c6ccedd5f0a45db999d35132d61c9ef5df
-  md5: 443ca247dc5d3fae3790a7fe29c9b9e1
-  depends:
-  - hicolor-icon-theme
-  - pango
-  - libgraphene
-  - fribidi
-  - fontconfig
-  - glib-tools
-  - __osx >=11.0
-  - libcxx >=21
-  - gdk-pixbuf >=2.44.8,<3.0a0
-  - libglib >=2.88.3,<3.0a0
-  - cairo >=1.18.4,<2.0a0
-  - libvulkan-loader >=1.4.357.0,<2.0a0
-  - libtiff >=4.7.2,<4.8.0a0
-  - librsvg >=2.62.3,<3.0a0
-  - libjpeg-turbo >=3.2.0,<4.0a0
-  - libpng >=1.6.58,<1.7.0a0
-  - libzlib >=1.3.2,<2.0a0
-  - libfreetype >=2.14.3
-  - libfreetype6 >=2.14.3
-  - libharfbuzz >=14.4.0
-  - libintl >=0.25.1,<1.0a0
-  - libasprintf >=0.25.1,<1.0a0
-  - libgettextpo >=0.25.1,<1.0a0
-  - pango >=1.58.2,<2.0a0
-  - epoxy >=1.5.10,<1.6.0a0
-  license: LGPL-2.0-or-later
-  license_family: LGPL
-  run_exports:
-    weak:
-    - gtk4 >=4.22.5,<5.0a0
-    - adwaita-icon-theme
-  size: 23263982
-  timestamp: 1789076773265
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtk4-4.24.0-h7a6b1a4_0.conda
   sha256: 9c0bf617ec5d45ee05a870173c1d933a85563307cf4cc6f2d0f57a632c630eac
   md5: 3d336945064ded761f3e543d631172f4
@@ -6779,32 +6615,6 @@ packages:
     - adwaita-icon-theme
   size: 21086093
   timestamp: 1789855868579
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.20.0-hb285bd5_0.conda
-  sha256: adebe2420237ba9e507a59839fef89381247e7e8d3f40afcd2655ab2b9ebea16
-  md5: f5db1960a34bac4cf67370cc163aaa93
-  depends:
-  - libgraphene
-  - cairo
-  - gdk-pixbuf
-  - libintl
-  - pcre2
-  - __osx >=11.0
-  - fribidi >=1.0.16,<2.0a0
-  - libglib >=2.86.4,<3.0a0
-  - fontconfig >=2.17.1,<3.0a0
-  - fonts-conda-ecosystem
-  - libxml2
-  - libxml2-16 >=2.15.2
-  - libfreetype >=2.14.2
-  - gtk4 >=4.20.3,<5.0a0
-  - pango >=1.56.4,<2.0a0
-  license: LGPL-2.0-or-later
-  license_family: LGPL
-  run_exports:
-    weak:
-    - gtksourceview >=5.20.0,<5.21.0a0
-  size: 674658
-  timestamp: 1773743297332
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/gtksourceview-5.22.0-h0490168_0.conda
   sha256: ad40f5007d0dad30d65a7e4b5e8d82150a74d3110c3ac49679ca27b2c9b0d277
   md5: 646c4ef7b81a664e96b4a2d3ae78749a
@@ -7145,24 +6955,6 @@ packages:
   run_exports: {}
   size: 123510
   timestamp: 1788835017347
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.88.3-hccd281b_4.conda
-  sha256: d7ceba442e7286c5b0ba137fff1a37058c3449c51f6a5ae9ee428a5f23b88f8d
-  md5: 923695fb1f18269812a3ed61755f0261
-  depends:
-  - __osx >=11.0
-  - libffi >=3.7.0,<3.8.0a0
-  - pcre2 >=10.47,<10.48.0a0
-  - libzlib >=1.3.2,<2.0a0
-  - libiconv >=1.18,<2.0a0
-  - libintl >=0.25.1,<1.0a0
-  constrains:
-  - glib >2.66
-  license: LGPL-2.1-or-later
-  run_exports:
-    weak:
-    - libglib >=2.88.3,<3.0a0
-  size: 4442908
-  timestamp: 1789008695203
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/libglib-2.90.0-hccd281b_0.conda
   sha256: 4ec64c476881b31f211842952f192208a3af0925a596da227f4d97fb9a63e0ac
   md5: 8f63a5f35547d0c6d819830ebe0d3245

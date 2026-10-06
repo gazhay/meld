@@ -35,6 +35,12 @@ gtksourceview = ">=5.18.0,<6"
 adwaita-icon-theme = ">=50.0,<51"
 libadwaita = ">=1.9.3,<2"
 
+[target.osx-arm64.dependencies]
+gtksourceview = ">=5.22.0,<6"
+
+[target.osx-64.dependencies]
+gtksourceview = ">=5.22.0,<6"
+
 [feature.build.dependencies]
 rattler-build = ">=0.74.0,<0.75"
 binutils = ">=2.44.0,<3"

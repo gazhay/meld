@@ -104,17 +104,31 @@ build-bundle:
     # Create a bundle wheel
     - pixi run -e build python -m bundler.build_bundle_wheel meld-win-x86_64 .
 
-    # Install rcodesign as codesign, to allow signing Apple Mach-O binaries
-    - curl -fsSL https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/apple-codesign-0.29.0-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/rcodesign'
-    - printf '#!/usr/bin/env bash\nout=$(rcodesign sign "${!#}" 2>&1) || { echo "$out" >&2; exit 1; }\n' > /usr/bin/codesign
-    - chmod a+x /usr/bin/codesign
+    # # Install rcodesign and codesign-using-rcodesign, to allow signing Apple Mach-O binaries
+    # - curl -fsSL https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/apple-codesign-0.29.0-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin --strip-components=1 --wildcards '*/rcodesign'
+    # - cp bundler/codesign-using-rcodesign.sh /usr/bin/codesign
+    # - chmod a+x /usr/bin/codesign
 
-    # See https://github.com/conda-forge/gtksourceview-feedstock/issues/9
-    # We need a newer version of gtksourceview, since the typelib is missing in 5.18.0,
-    # But currently newer versions depend on libintl, which isn't available on linux.
-    # So we remove this platform temporarily.
-    - pixi workspace platform remove linux-64
-    - pixi update gtksourceview
+build-bundle-mac:
+  # There are issues with running pixi to cross-compile from linux to mac. So we just
+  # build on mac for now.
+  stage: build
+  needs: [build-bundle]
+  tags:
+    - macos
+    - arm64
+  artifacts:
+    paths:
+      - "meld-*.conda"
+      - "meld-*.tar.gz"
+      - "*.whl"
+  variables:
+    PIXI_FROZEN: "true"
+    PIXI_LOCKED: "true"
+  script:
+    - mkdir -p ~/.local/bin
+    - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
+    - export PATH=~/.local/bin:$PATH
 
     # Build the appdir for osx-arm64
     - pixi reinstall -e default -p osx-arm64
@@ -132,35 +146,30 @@ build-bundle:
     # Create a bundle wheel
     - pixi run -e build python -m bundler.build_bundle_wheel meld-osx-x86_64 .
 
-# build-bundle-mac:
-#   stage: build
-#   # needs: [build-bundle]
-#   tags:
-#     - macos
-#     - arm64
-#   artifacts:
-#     paths:
-#       - "*.png"
-#   script:
-#     - mkdir -p ~/.local/bin
-#     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
-#     - export PATH=~/.local/bin:$PATH
 
-#     # XXX TODO: remove this, this is only to remove the dependency. Build the conda package.
-#     - pixi publish --target-dir .
-#     # See https://github.com/conda-forge/gtksourceview-feedstock/issues/9
-#     # We need a newer version of gtksourceview, since the typelib is missing in 5.18.0,
-#     # But currently newer versions depend on libintl, which isn't available on linux.
-#     # So we remove this platform temporarily.
-#     - pixi workspace platform remove linux-64
-#     - pixi update gtksourceview
-#     - pixi reinstall -e default
-#     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
-#     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
-#     - pixi run -e build python -m bundler.build_bundle_wheel appdir .
-#     - python3 -m venv venv
-#     - venv/bin/pip install meldmerge-*-py3-*.whl
-#     - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+  # artifacts:
+  #   paths:
+  #     - "*.png"
+  # script:
+  #   - mkdir -p ~/.local/bin
+  #   - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
+  #   - export PATH=~/.local/bin:$PATH
+
+  #   # XXX TODO: remove this, this is only to remove the dependency. Build the conda package.
+  #   - pixi publish --target-dir .
+  #   # See https://github.com/conda-forge/gtksourceview-feedstock/issues/9
+  #   # We need a newer version of gtksourceview, since the typelib is missing in 5.18.0,
+  #   # But currently newer versions depend on libintl, which isn't available on linux.
+  #   # So we remove this platform temporarily.
+  #   - pixi workspace platform remove linux-64
+  #   - pixi update gtksourceview
+  #   - pixi reinstall -e default
+  #   - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
+  #   - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+  #   - pixi run -e build python -m bundler.build_bundle_wheel appdir .
+  #   - python3 -m venv venv
+  #   - venv/bin/pip install meldmerge-*-py3-*.whl
+  #   - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 test-bundle-linux:
   stage: test
@@ -178,13 +187,15 @@ test-bundle-linux:
 
 test-bundle-mac:
   stage: test
-  needs: [build-bundle]
+  needs: [build-bundle-mac]
   tags:
     - macos
     - arm64
   artifacts:
     paths:
       - "*.png"
+  variables:
+    MELD_SCREENSHOT_TIMEOUT_MS: "10000"  # It seems that on Mac we need more time
   script:
     - tar -xf meld-osx-arm64.tar.gz
     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png meld-osx-arm64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
