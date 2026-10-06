@@ -17,6 +17,7 @@ import zstandard as zstd
 
 from .conda_parse import Arch, PathType, Pkg, Platform, get_pkgs
 from .remove_shlib_symlinks import (
+    MACH_O_MAGICS,
     get_shlib_re,
     get_shlib_subs,
     get_shlib_symlinks,
@@ -318,7 +319,7 @@ def fix_shlib_names(
         dst_data = sub_shlibs_in_something(subs, shlib_re, src_data)
         if dst_data != src_data:
             path.write_bytes(dst_data)
-            if platform == Platform.OSX:
+            if platform == Platform.OSX and dst_data[:4] in MACH_O_MAGICS:
                 check_call(["codesign", "--force", "--sign", "-", path])
 
 

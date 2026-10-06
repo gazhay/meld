@@ -3,6 +3,16 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+MACH_O_MAGICS = (
+    b"\xcf\xfa\xed\xfe",  # 64-bit Mach-O
+    b"\xca\xfe\xba\xbe",  # Universal ("fat") binary
+)
+
+BINARY_MAGICS = (
+    b"\x7fELF",
+    b"GOBJ",
+) + MACH_O_MAGICS
+
 
 def get_shlib_symlinks(libdir: Path) -> dict[str, list[str]]:
     """
@@ -142,12 +152,7 @@ def sub_shlibs_in_something(
     if m is None:
         return src
     magic = src[:4]
-    if magic in (
-        b"\x7fELF",
-        b"GOBJ",
-        b"\xcf\xfa\xed\xfe",  # 64-bit Mach-O
-        b"\xca\xfe\xba\xbe",  # Universal ("fat") binary
-    ):
+    if magic in BINARY_MAGICS:
         return sub_shlibs_in_binary(subs, shlib_re, src)
     elif magic == b"<?xm":
         return sub_shlibs_in_text(subs, shlib_re, src)
