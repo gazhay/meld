@@ -6,14 +6,14 @@ import json
 import logging
 import re
 import zlib
-from compression import zstd
-from logging import info
 from pathlib import Path
 from shutil import copy2
 from subprocess import check_call
 from tarfile import TarFile
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
+
+import zstandard as zstd
 
 from .conda_parse import Arch, PathType, Pkg, Platform, get_pkgs
 from .remove_shlib_symlinks import (
@@ -23,6 +23,9 @@ from .remove_shlib_symlinks import (
     remove_shlib_symlinks,
     sub_shlibs_in_something,
 )
+
+logger = logging.getLogger(__name__)
+info = logger.info
 
 WIN = Platform.WIN
 
@@ -91,7 +94,15 @@ EXCLUDE_PACKAGES = {
 # If the path from the root of the env matches one of EXCLUDE_PATTERNS and doesn't
 # match any of INCLUDE_PATTERNS, it's not copied to the dest env
 
-DYNMODS = "_decimal _sha3 _pickle _sqlite _ssl _curses _curses_panel".split()
+DYNMODS = [
+    "_decimal",
+    "_sha3",
+    "_pickle",
+    "_sqlite",
+    "_ssl",
+    "_curses",
+    "_curses_panel",
+]
 
 EXCLUDE_PATTERNS = [
     "bin/**",
@@ -136,7 +147,7 @@ INCLUDE_PATTERNS = [
 
 def get_glob_re(patterns: list[str]) -> re.Pattern[str]:
     regexes = [
-        glob.translate(pattern, recursive=True, include_hidden=True)
+        glob.translate(pattern, recursive=True, include_hidden=True)  # ty: ignore[unresolved-attribute]
         for pattern in patterns
     ]
     combined = "|".join(f"(?:{p})" for p in regexes)
@@ -148,7 +159,7 @@ INCLUDE_RE = get_glob_re(INCLUDE_PATTERNS)
 
 
 def strip_elf(src: bytes) -> bytes:
-    with NamedTemporaryFile(delete_on_close=False) as f:
+    with NamedTemporaryFile(delete_on_close=False) as f:  # ty: ignore[no-matching-overload]
         f.write(src)
         f.close()
         check_call(["strip", f.name])
@@ -294,7 +305,10 @@ def deref_symlinks(root: Path, print_symlink_sizes: bool) -> int:
 
 
 def fix_shlib_names(
-    subs: dict[bytes, bytes], shlib_re: re.Pattern[bytes], dst_root: Path
+    platform: Platform,
+    subs: dict[bytes, bytes],
+    shlib_re: re.Pattern[bytes],
+    dst_root: Path,
 ) -> None:
     for path in dst_root.rglob("*"):
         assert not path.is_symlink()
@@ -304,7 +318,8 @@ def fix_shlib_names(
         dst_data = sub_shlibs_in_something(subs, shlib_re, src_data)
         if dst_data != src_data:
             path.write_bytes(dst_data)
-            check_call(["codesign", "--force", "--sign", "-", path])
+            if platform == Platform.OSX:
+                check_call(["codesign", "--force", "--sign", "-", path])
 
 
 def make_compressed_dir(uncompressed_root: Path, compressed_root: Path) -> None:
@@ -358,7 +373,7 @@ def shrink_env(
         info(f"Dereferenced symlinks. Wasted bytes: {wasted_bytes:,}" + extra)
 
         info("Fixing shlib names in files...")
-        fix_shlib_names(subs, shlib_re, dst_root)
+        fix_shlib_names(platform, subs, shlib_re, dst_root)
 
     if compressed_dst is not None:
         info(f"Compressing files into {compressed_dst}...")
@@ -408,7 +423,7 @@ def main():
         parser.error("If --print-pkg-sizes is not given, dst must be given")
 
     if args.print_pkg_sizes:
-        pkgs, _platform = get_pkgs(args.src)
+        pkgs, _platform, _arch = get_pkgs(args.src)
         sizes = {
             pkg.name: get_pkg_compressed_size(args.src, pkg)
             for pkg in pkgs

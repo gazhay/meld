@@ -39,6 +39,7 @@ libadwaita = ">=1.9.3,<2"
 rattler-build = ">=0.74.0,<0.75"
 binutils = ">=2.44.0,<3"
 python-build = ">=1.6.0,<2"
+zstandard = ">=0.25.0,<0.26"  # python zstd support for < 3.14
 
 [feature.test.dependencies]
 ruff = ">=0.14.0,<0.15"
