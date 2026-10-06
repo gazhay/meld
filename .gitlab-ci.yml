@@ -98,6 +98,9 @@ build-bundle-mac:
   tags:
     - macos
     - arm64
+  artifacts:
+    paths:
+      - "*.png"
   script:
     - mkdir -p ~/.local/bin
     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
@@ -112,9 +115,6 @@ build-bundle-mac:
     - pixi workspace platform remove linux-64
     - pixi update gtksourceview
     - pixi reinstall -e default
-    - bundler/ssh-to-ci.sh
-    # pixi add $(realpath meld-3.99.0-pyh4616a5c_0.conda)
-    # MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 pixi run meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 MELD_TURN_ON_HIGHLIGHT_SYNTAX=1 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
     - pixi run -e build python -m bundler.build_bundle_wheel appdir .
