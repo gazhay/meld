@@ -23,21 +23,15 @@ import functools
 import os
 import shutil
 import subprocess
+from collections.abc import Callable, Generator, Sequence
 from pathlib import PurePath
+from re import Pattern
 from typing import (
     TYPE_CHECKING,
     AnyStr,
-    Callable,
-    Generator,
-    List,
-    Optional,
-    Pattern,
-    Sequence,
-    Tuple,
-    Union,
 )
 
-from gi.repository import GLib, Gtk
+from gi.repository import Gtk
 
 from meld.conf import _
 
@@ -66,7 +60,7 @@ def with_focused_pane(function):
     return wrap_function
 
 
-def get_modal_parent(widget: Optional[Gtk.Widget] = None) -> Gtk.Window:
+def get_modal_parent(widget: Gtk.Widget | None = None) -> Gtk.Window:
     parent: Gtk.Window
     if not widget:
         parent = Gtk.Application.get_default().get_active_window()
@@ -81,8 +75,6 @@ def error_dialog(primary: str, secondary: str) -> None:
     This should only ever be used as a last resort, and for errors that
     a user is unlikely to encounter. If you're tempted to use this,
     think twice.
-
-    Primary must be plain text. Secondary must be valid markup.
     """
     Gtk.AlertDialog(message=primary, detail=secondary).show(get_modal_parent())
 
@@ -106,10 +98,8 @@ def user_critical(primary: str, message: str) -> Callable[[Callable], Callable]:
                 error_dialog(
                     primary=primary,
                     secondary=_(
-                        "{}\n\n"
-                        "Meld encountered a critical error while running:\n"
-                        "<tt>{}</tt>"
-                    ).format(message, GLib.markup_escape_text(str(function))),
+                        "{}\n\nMeld encountered a critical error while running:\n{}"
+                    ).format(message, str(function)),
                 )
                 raise
 
@@ -129,7 +119,7 @@ def all_same(iterable: Sequence) -> bool:
     return True
 
 
-def shorten_names(*names: str) -> List[str]:
+def shorten_names(*names: str) -> list[str]:
     """Remove common parts of a list of paths
 
     For example, `('/tmp/foo1', '/tmp/foo2')` would be summarised as
@@ -145,7 +135,7 @@ def shorten_names(*names: str) -> List[str]:
     common = common.intersection(*(p.parents for p in paths))
     if not common:
         return list(names)
-    common_parent = sorted(common, key=lambda p: -len(p.parts))[0]
+    common_parent = max(common, key=lambda p: len(p.parts))
 
     paths = [p.relative_to(common_parent) for p in paths]
     basenames = [p.name for p in paths]
@@ -180,11 +170,11 @@ def get_hide_window_startupinfo():
     return startupinfo
 
 
-SubprocessGenerator = Generator[Union[Tuple[int, str], None], None, None]
+SubprocessGenerator = Generator[tuple[int, str] | None, None, None]
 
 
 def read_pipe_iter(
-    command: List[str],
+    command: list[str],
     workdir: str,
     errorstream: "ConsoleStream",
     yield_interval: float = 0.1,
@@ -197,7 +187,7 @@ def read_pipe_iter(
     """
 
     class Sentinel:
-        proc: Optional[subprocess.Popen]
+        proc: subprocess.Popen | None
 
         def __init__(self) -> None:
             self.proc = None
@@ -220,7 +210,7 @@ def read_pipe_iter(
             )
             self.proc.stdin.close()
             childout, childerr = self.proc.stdout, self.proc.stderr
-            bits: List[str] = []
+            bits: list[str] = []
             while len(bits) == 0 or bits[-1] != "":
                 state = select(
                     [childout, childerr], [], [childout, childerr], yield_interval
@@ -229,19 +219,19 @@ def read_pipe_iter(
                     if len(state[2]) == 0:
                         yield None
                     else:
-                        raise Exception("Error reading pipe")
+                        raise OSError("Error reading pipe")
                 if childout in state[0]:
                     try:
                         # get buffer size
                         bits.append(childout.read(4096))
-                    except IOError:
+                    except OSError:
                         # FIXME: ick need to fix
                         break
                 if childerr in state[0]:
                     try:
                         # how many chars?
                         errorstream.error(childerr.read(1))
-                    except IOError:
+                    except OSError:
                         # FIXME: ick need to fix
                         break
             status = self.proc.wait()
@@ -309,7 +299,7 @@ def copytree(src: str, dst: str) -> None:
             raise
 
 
-def merge_intervals(interval_list: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+def merge_intervals(interval_list: list[tuple[int, int]]) -> list[tuple[int, int]]:
     """Merge a list of intervals
 
     Returns a list of itervals as 2-tuples with all overlapping
@@ -347,7 +337,7 @@ def merge_intervals(interval_list: List[Tuple[int, int]]) -> List[Tuple[int, int
 def apply_text_filters(
     txt: AnyStr,
     regexes: Sequence[Pattern],
-    apply_fn: Optional[Callable[[int, int], None]] = None,
+    apply_fn: Callable[[int, int], None] | None = None,
 ) -> AnyStr:
     """Apply text filters
 

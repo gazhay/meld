@@ -17,6 +17,7 @@
 
 import functools
 import logging
+import sys
 from collections.abc import Sequence
 
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, GObject, Gtk, GtkSource
@@ -54,7 +55,15 @@ def file_is_image(gfile):
     if not gfile:
         return False
 
-    # Check MIME type of the file.
+    # Probe local files directly on Windows, where GIO content type detection
+    # may not identify common image formats.
+    if sys.platform == "win32":
+        path = gfile.get_path()
+        if path:
+            image_format, _width, _height = GdkPixbuf.Pixbuf.get_file_info(path)
+            return image_format is not None
+
+    # Check the MIME type on other platforms and for non-local Windows files.
     try:
         info = gfile.query_info(
             Gio.FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
@@ -64,9 +73,10 @@ def file_is_image(gfile):
         file_content_type = info.get_content_type()
         return file_content_type in get_supported_image_mime_types()
     except GLib.Error as err:
-        if err.code == Gio.IOErrorEnum.NOT_FOUND:
-            return False
-        elif err.code == Gio.IOErrorEnum.NOT_MOUNTED:
+        if (
+            err.code == Gio.IOErrorEnum.NOT_FOUND
+            or err.code == Gio.IOErrorEnum.NOT_MOUNTED
+        ):
             return False
         raise
 
@@ -74,7 +84,14 @@ def file_is_image(gfile):
 def files_are_images(gfiles):
     """Check if all files in the list are images."""
 
-    for gfile in gfiles:
+    check_files = [f for f in gfiles if f]
+
+    # Special case: if all files are blank, use text diff
+    if not check_files:
+        return False
+
+    # Check if any non-blank file is not an image
+    for gfile in check_files:
         if not file_is_image(gfile):
             return False
 
