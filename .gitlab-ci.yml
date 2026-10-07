@@ -126,6 +126,7 @@ build-bundle-mac:
     PIXI_FROZEN: "true"
     PIXI_LOCKED: "true"
   script:
+    # Install pixi. 0.81.0 Is just the current latest release
     - mkdir -p ~/.local/bin
     - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
     - export PATH=~/.local/bin:$PATH
@@ -145,31 +146,6 @@ build-bundle-mac:
     - tar -czf meld-osx-x86_64.tar.gz meld-osx-x86_64
     # Create a bundle wheel
     - pixi run -e build python -m bundler.build_bundle_wheel meld-osx-x86_64 .
-
-
-  # artifacts:
-  #   paths:
-  #     - "*.png"
-  # script:
-  #   - mkdir -p ~/.local/bin
-  #   - curl -fsSL https://github.com/prefix-dev/pixi/releases/download/v0.81.0/pixi-aarch64-apple-darwin.tar.gz | tar -C ~/.local/bin -xz pixi
-  #   - export PATH=~/.local/bin:$PATH
-
-  #   # XXX TODO: remove this, this is only to remove the dependency. Build the conda package.
-  #   - pixi publish --target-dir .
-  #   # See https://github.com/conda-forge/gtksourceview-feedstock/issues/9
-  #   # We need a newer version of gtksourceview, since the typelib is missing in 5.18.0,
-  #   # But currently newer versions depend on libintl, which isn't available on linux.
-  #   # So we remove this platform temporarily.
-  #   - pixi workspace platform remove linux-64
-  #   - pixi update gtksourceview
-  #   - pixi reinstall -e default
-  #   - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda appdir
-  #   - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 appdir/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
-  #   - pixi run -e build python -m bundler.build_bundle_wheel appdir .
-  #   - python3 -m venv venv
-  #   - venv/bin/pip install meldmerge-*-py3-*.whl
-  #   - MELD_SCREENSHOT_AND_EXIT=wheel-screenshot.png MELD_SCREENSHOT_TIMEOUT_MS=5000 venv/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
 
 test-bundle-linux:
   stage: test
