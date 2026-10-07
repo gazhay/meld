@@ -170,8 +170,6 @@ test-bundle-mac:
   artifacts:
     paths:
       - "*.png"
-  variables:
-    MELD_SCREENSHOT_TIMEOUT_MS: "10000"  # It seems that on Mac we need more time
   script:
     - tar -xf meld-osx-arm64.tar.gz
     - MELD_SCREENSHOT_AND_EXIT=appdir-screenshot.png meld-osx-arm64/bin/meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
