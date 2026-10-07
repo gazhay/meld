@@ -50,13 +50,6 @@ done
 BIN_DIR=$(cd -P "$(dirname "$SOURCE")" && pwd)
 PREFIX=$(dirname "$BIN_DIR")
 
-export GI_TYPELIB_PATH="$PREFIX/lib/girepository-1.0"
-export XKB_CONFIG_ROOT="$PREFIX/share/xkeyboard-config-2"
-export FONTCONFIG_PATH="$PREFIX/etc/fonts"
-export FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf"
-export GSETTINGS_SCHEMA_DIR="$PREFIX/share/glib-2.0/schemas"
-export XDG_DATA_DIRS="$PREFIX/share:$XDG_DATA_DIRS"
-
 exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
@@ -67,14 +60,6 @@ setlocal
 rem set PREFIX to the directory of this file, stripping the trailing backslash
 set "PREFIX=%~dp0"
 set "PREFIX=%PREFIX:~0,-1%"
-
-set "GI_TYPELIB_PATH=%PREFIX%\Library\lib\girepository-1.0"
-set "FONTCONFIG_PATH=%PREFIX%\Library\etc\fonts"
-set "FONTCONFIG_FILE=%PREFIX%\Library\etc\fonts\fonts.conf"
-set "GSETTINGS_SCHEMA_DIR=%PREFIX%\Library\share\glib-2.0\schemas"
-set "XDG_DATA_DIRS=%PREFIX%\Library\share"
-
-set "PATH=%PREFIX%;%PREFIX%\Library\bin;%PATH%"
 
 "%PREFIX%\python.exe" "%PREFIX%\Library\lib\meld" %*
 exit /b %ERRORLEVEL%
@@ -271,10 +256,15 @@ def extract_meld_package(meld_pkg: Path, dst_root: Path, platform: Platform) -> 
         assert data_io is not None
         data = data_io.read()
         if member == "python-scripts/meld":
-            # Put the bin/meld script, which will not find the right python executable,
-            # in lib/meld
+            # Put the bin/meld script in lib/meld
             libdir = "Library/lib" if platform == WIN else "lib"
             dst = dst_root / libdir / "meld"
+            # Create lib/meld/meld-conda-marker, to let the meld script know that it
+            # runs from a bundled conda env.
+            (dst_root / libdir / "meld-conda-marker").write_text(
+                "This is a marker file. It lets the meld script know that we"
+                " are in a bundled conda env.\n"
+            )
         else:
             assert member.startswith("site-packages/")
             dst = site_packages.parent / member

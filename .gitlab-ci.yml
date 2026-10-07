@@ -89,7 +89,7 @@ build-bundle:
     - pixi publish --target-dir .
 
     # Build the appdir for linux-x86_64
-    - pixi reinstall -e default
+    - pixi reinstall -e default -p linux-64
     - pixi run -e build python -m bundler.shrink_env .pixi/envs/default meld-*.conda meld-linux-x86_64
     # Create a .tar.gz from it
     - tar -czf meld-linux-x86_64.tar.gz meld-linux-x86_64

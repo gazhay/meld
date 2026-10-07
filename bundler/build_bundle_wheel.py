@@ -113,10 +113,7 @@ def build_bundle_wheel(
 
     pkgdir = tmpdir / "meld_bundle"
     pkgdir.mkdir()
-    bundle_shim = (
-        "bundle_shim_windows.py" if platform == Platform.WIN else "bundle_shim.py"
-    )
-    copy(mydir / bundle_shim, pkgdir / "__init__.py")
+    copy(mydir / "bundle_shim.py", pkgdir / "__init__.py")
 
     copytree(appdir, pkgdir / "appdir", symlinks=True)
 
