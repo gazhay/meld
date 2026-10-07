@@ -111,9 +111,9 @@
                   </object>
                 </child>
                 <child type="end">
-                  <object class="GtkMenuButton" id="text_filter_button">
-                    <property name="label" translatable="yes">Text Filters</property>
-                    <property name="menu-model">text-filter-menu</property>
+                  <object class="GtkMenuButton" id="text_display_button">
+                    <property name="label" translatable="yes">Display</property>
+                    <property name="menu-model">text-display-menu</property>
                   </object>
                 </child>
                 <child type="end">
@@ -301,6 +301,28 @@
     <section>
       <attribute name="id">custom-filter-section</attribute>
     </section>
+  </menu>
+  <menu id="text-display-menu">
+    <item>
+      <attribute name="label" translatable="yes">Show line numbers</attribute>
+      <attribute name="action">view.show-line-numbers</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Show whitespace</attribute>
+      <attribute name="action">view.draw-spaces-bool</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Highlight current line</attribute>
+      <attribute name="action">view.highlight-current-line-local</attribute>
+    </item>
+    <item>
+      <attribute name="label" translatable="yes">Text wrapping</attribute>
+      <attribute name="action">view.wrap-mode-bool</attribute>
+    </item>
+    <submenu>
+      <attribute name="id">text-filter-submenu</attribute>
+      <attribute name="label" translatable="yes">Text Filters</attribute>
+    </submenu>
   </menu>
   <menu id="folder-status-filter-menu">
     <section>

@@ -35,7 +35,7 @@ from meld.dirdiff import DirDiff
 from meld.filediff import FileDiff
 from meld.imagediff import ImageDiff, files_are_images
 from meld.melddoc import ComparisonState, MeldDoc
-from meld.menuhelpers import replace_menu_section
+from meld.menuhelpers import find_menu_item, replace_menu_item
 from meld.misc import error_dialog, guess_if_remote_x11
 from meld.newdifftab import NewDiffTab
 from meld.recent import get_recent_comparisons
@@ -57,7 +57,7 @@ class MeldWindow(Adw.ApplicationWindow):
     tabview = Gtk.Template.Child()
     previous_conflict_button = Gtk.Template.Child()
     spinner = Gtk.Template.Child()
-    text_filter_button: Gtk.Button = Gtk.Template.Child()
+    text_display_button: Gtk.Button = Gtk.Template.Child()
     vc_filter_button: Gtk.Button = Gtk.Template.Child()
     view_toolbar = Gtk.Template.Child()
 
@@ -138,17 +138,19 @@ class MeldWindow(Adw.ApplicationWindow):
         section = Gio.MenuItem.new_section(_("Filename"), filter_items_model)
         section.set_attribute([("id", "s", "custom-filter-section")])
         filter_model = self.folder_filter_button.get_menu_model()
-        replace_menu_section(filter_model, section)
+        replace_menu_item(filter_model, section)
 
     def update_text_filters(self, settings):
         filter_items_model = Gio.Menu()
         for i, filt in enumerate(settings.text_filters):
             name = TEXT_FILTER_ACTION_FORMAT.format(i)
             filter_items_model.append(label=filt.label, detailed_action=f"view.{name}")
-        section = Gio.MenuItem.new_section(None, filter_items_model)
-        section.set_attribute([("id", "s", "custom-filter-section")])
-        filter_model = self.text_filter_button.get_menu_model()
-        replace_menu_section(filter_model, section)
+        display_menu_model = self.text_display_button.get_menu_model()
+        idx = find_menu_item(display_menu_model, "text-filter-submenu")
+        label = display_menu_model.get_item_attribute_value(idx, "label").get_string()
+        submenu = Gio.MenuItem.new_submenu(label, filter_items_model)
+        submenu.set_attribute([("id", "s", "text-filter-submenu")])
+        replace_menu_item(display_menu_model, submenu)
 
     def on_widget_drag_drop(
         self,
