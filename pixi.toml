@@ -58,6 +58,7 @@ ipywidgets = "*"
 pip = "*"  # required for vscode jupyter
 
 [environments]
-build = ["build"]
-test = ["test", "build"]
-dev = ["dev", "test", "build"]
+default = { solve-group = "main" }
+build = { features = ["build"], solve-group = "main" }
+test = { features = ["test", "build"], solve-group = "main" }
+dev = { features = ["dev", "test", "build"], solve-group = "main" }
