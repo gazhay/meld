@@ -147,6 +147,18 @@ build-bundle-mac:
     # Create a bundle wheel
     - pixi run -e build python -m bundler.build_bundle_wheel meld-osx-x86_64 .
 
+test-global-install-linux:
+  stage: test
+  artifacts:
+    paths:
+      - "*.png"
+  script:
+    - dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus-daemon python3-devel meson pkg-config gtksourceview5-devel libadwaita-devel python3-gobject-devel python3-cairo-devel itstool desktop-file-utils libglvnd-gles
+    - meson setup _build
+    - ninja -C _build
+    - ninja -C _build install
+    - MELD_SCREENSHOT_AND_EXIT=screenshot.png xvfb-run -a -s "-screen 0 1920x1080x24" meld bundler/examples/calc_{REMOTE,BASE,LOCAL}.py
+
 test-bundle-linux:
   stage: test
   needs: [build-bundle]
