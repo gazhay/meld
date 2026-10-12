@@ -33,6 +33,8 @@ WIN = Platform.WIN
 COMPRESSION_LEVEL = 6
 ELF_MAGIC = b"\x7fELF"
 
+MYDIR = Path(__file__).absolute().parent
+
 ENTRYPOINT_SCRIPT = """\
 #!/bin/sh
 
@@ -50,7 +52,7 @@ done
 BIN_DIR=$(cd -P "$(dirname "$SOURCE")" && pwd)
 PREFIX=$(dirname "$BIN_DIR")
 
-exec "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
+exec "$PREFIX/bin/python3.14" "$PREFIX/bin/run_in_env.py" "$PREFIX/bin/python3.14" "$PREFIX/lib/meld" "$@"
 """
 
 WINDOWS_ENTRYPOINT_SCRIPT = r"""
@@ -61,7 +63,7 @@ rem set PREFIX to the directory of this file, stripping the trailing backslash
 set "PREFIX=%~dp0"
 set "PREFIX=%PREFIX:~0,-1%"
 
-"%PREFIX%\python.exe" "%PREFIX%\Library\lib\meld" %*
+"%PREFIX%\python.exe" "%PREFIX%\run_in_env.py" "%PREFIX%\python.exe" "%PREFIX%\Library\lib\meld" %*
 exit /b %ERRORLEVEL%
 """
 
@@ -259,12 +261,6 @@ def extract_meld_package(meld_pkg: Path, dst_root: Path, platform: Platform) -> 
             # Put the bin/meld script in lib/meld
             libdir = "Library/lib" if platform == WIN else "lib"
             dst = dst_root / libdir / "meld"
-            # Create lib/meld/meld-conda-marker, to let the meld script know that it
-            # runs from a bundled conda env.
-            (dst_root / libdir / "meld-conda-marker").write_text(
-                "This is a marker file. It lets the meld script know that we"
-                " are in a bundled conda env.\n"
-            )
         else:
             assert member.startswith("site-packages/")
             dst = site_packages.parent / member
@@ -370,13 +366,19 @@ def shrink_env(
         info(f"Compressing files into {compressed_dst}...")
         make_compressed_dir(dst_root, compressed_dst)
 
+    run_in_env_s = (MYDIR / "run_in_env.py").read_text()
     if platform == WIN:
         entrypoint = dst_root / "meld.bat"
         entrypoint.write_text(WINDOWS_ENTRYPOINT_SCRIPT)
+        run_in_env = dst_root / "run_in_env.py"
+        run_in_env.write_text(run_in_env_s)
     else:
         entrypoint = dst_root / "bin/meld"
         entrypoint.write_text(ENTRYPOINT_SCRIPT)
         entrypoint.chmod(0o755)
+        run_in_env = dst_root / "bin/run_in_env.py"
+        run_in_env.write_text(run_in_env_s)
+        run_in_env.chmod(0o755)
 
     info("Done!")
 

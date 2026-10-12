@@ -1,6 +1,8 @@
 # We use a script instead of separate commands insite .gitlab-ci.yml,
 # since this seems to be needed in order to actually catch errors.
 
+Set-PSDebug -Trace 2
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
