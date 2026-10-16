@@ -409,7 +409,7 @@ class MeldWindow(Adw.ApplicationWindow):
         else:
             return self.append_filediff(gfiles, merge_output=merge_output, meta=meta)
 
-    def append_fourdiff(self, gfiles: Sequence[Optional[Gio.File]]) -> FourDiff:
+    def append_fourdiff(self, gfiles: Sequence[Gio.File | None]) -> FourDiff:
         assert len(gfiles) == 4
         doc = FourDiff()
         self._append_page(doc)

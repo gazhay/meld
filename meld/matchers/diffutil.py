@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import ClassVar, NamedTuple, Sequence
+from typing import ClassVar, NamedTuple
 
 from gi.repository import GObject
 
@@ -75,7 +76,7 @@ def consume_blank_lines(chunk, texts, pane1, pane2):
 class CMarkerType(Enum):
     START = 1
     MIDDLE = 2
-    END = 2
+    END = 3
 
 
 # Whether to prefer assigning a "replace" op to before or after the marker.
