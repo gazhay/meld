@@ -53,11 +53,11 @@ There are 4 panes. From left to right:
 3. LOCAL
 4. MERGED
 
-LOCAL is your file before the merge. MERGED is the file you edit, where you want to resolve the conflict. Now, here's the crucial part: resolving the conflict **doesn't** mean to somehow combine REMOTE and LOCAL. What it **does** mean is to apply the change between BASE and REMOTE onto LOCAL. It helps me to look at it like adding vectors:
+LOCAL is your file before the merge. MERGED is the file you edit, where you want to resolve the conflict. Now, here's the crucial part: resolving the conflict **doesn't** mean to somehow combine REMOTE and LOCAL. What it **does** mean is to apply the change between BASE and REMOTE onto LOCAL. I like looking at it like adding vectors:
 
-![Visualizing merge as vector addition](fourdiff-imgs/merge-as-vector-addition.svg)
+![Visualizing merge as vector addition](fourdiff-imgs/merge-as-vector-addition-animation.svg)
 
-To get to MERGED, we need to add the blue vector, that takes us from BASE to REMOTE, to LOCAL.
+To get to MERGED, we need to add the blue vector, that takes us from BASE to REMOTE, onto LOCAL.
 
 We can write:
 
@@ -67,25 +67,25 @@ Or:
 
 * MERGED - LOCAL = REMOTE - BASE
 
-Anyway, from looking at the two left panes, it's clear what change we want to apply: add the imports for `random`, `datetime`, `math` and `collections`. But what actually is the source of this conflict? To see the source of the conflict, we can press Ctrl-T, or click the ![Toggle Fourdiff View button](fourdiff-imgs/readme-toggle-fourdiff-view.png) button. The view switches to showing only the diff between the BASE and LOCAL panes. This diff is the orange vector, and it's not trivial to apply the change between BASE and REMOTE after it. Here's how it looks:
+Anyway, from looking at the two leftmost panes, it's clear what change we want to apply: add the imports for `random`, `datetime`, `math` and `collections`. But what actually is the source of this conflict? To see the source of the conflict, we can press Ctrl-T, or click the ![Toggle Fourdiff View button](fourdiff-imgs/readme-toggle-fourdiff-view.png) button. The view switches to showing only the diff between the BASE and LOCAL panes. This diff is the orange arrow in the diagram, and it's the cause of the merge conflict - it's why it's not trivial to apply the change between BASE and REMOTE onto LOCAL. Here's how it looks:
 
 ![FourDiff view of the diff between BASE and LOCAL](fourdiff-imgs/readme-fourdiff-base-local-view.png)
 
-So we see that the change between BASE and LOCAL, which we want to preserve, is simply removing the `import time` line. Fortunately, the change we want to apply didn't touch `import time`, so we can press Ctrl-T again and edit the right pane to get this:
+So we see that the change between BASE and LOCAL, which we still want to preserve, is simply removing the `import time` line. Fortunately, the change we want to apply didn't touch `import time`, so we can press Ctrl-T again and edit the right pane to get this:
 
 ![FourDiff with resolved conflict](fourdiff-imgs/readme-fourdiff-resolved.png)
 
-Now it's quite easy to see, visually, that between BASE and REMOTE we have the same diff as between LOCAL and MERGED. So we're done!
+Now it's quite easy to see, visually, that the diff between BASE and REMOTE is now the same diff as between LOCAL and MERGED. So we're done!
 
-One more thing: Another way to get to MERGED is by adding the diff between BASE and LOCAL onto REMOTE, rather than add the diff between BASE and REMOTE onto LOCAL. Visually:
+One more thing: Another way to get to MERGED is by adding the diff between BASE and LOCAL onto REMOTE, rather than by adding the diff between BASE and REMOTE onto LOCAL. Visually:
 
-![Visualizing merge as a different vector addition](fourdiff-imgs/merge-as-vector-addition-2.svg)
+![Visualizing merge as a different vector addition](fourdiff-imgs/merge-as-vector-addition-2-animation.svg)
 
 In some cases it can be much easier to apply this other change. To get this, click the ![Swap REMOTE and LOCAL button](fourdiff-imgs/readme-swap-remote-and-local-button.png) button ("swap REMOTE and LOCAL"), and you'll get:
 
 ![FourDiff with swapped REMOTE and LOCAL](fourdiff-imgs/readme-fourdiff-swapped-remote-and-local.png)
 
-All this did was swap between the two middle panes. The MERGED pane is exactly the same. And now it's even simpler to see that we applied the diff correctly: in both cases, the change is simply to delete the `import time` line.
+All this did was swap between LOCAL and REMOTE, the two middle panes. The MERGED pane is exactly the same. In this case, now it's even simpler to see that we applied the diff correctly: in both cases, the change is simply to delete the `import time` line.
 
 ## A more complex example
 
@@ -113,7 +113,7 @@ Here's how it looks after you run `git mergetool -t fourdiff`:
 
 ![FourDiff with conflict markers](fourdiff-imgs/readme-complex-fourdiff-with-conflict-markers.png)
 
-We see that the change we want to apply (between BASE and REMOTE) is just the addition of arguments after `dry_fails_args`. It's adding `env`, which is:
+We see that the change we want to apply (between BASE and REMOTE) is just the addition of `env` after `dry_fails_args`. All the items in this list are lists of command-line arguments. The added `env` is defined to be:
 
 ```python
 env = ["--env", args.env] if args.env is not None else []
@@ -128,7 +128,7 @@ We see that the function actually got shorter. We can see that the changes are:
 2. Two new argument parts were added, `--smoke-runs` and `--exec-sequence`.
 3. `run_id` and `run_name` are now given in `args` instead of computed in the function.
 
-Now it's quite easy to apply the change: We should just add the `--env` arguments. Let's add them after `--dry-fails`, like in the original change. We get:
+Now it's quite easy to apply the change: We should just add the `--env` argument list. Let's add it after `--dry-fails`, like in the original change. We get:
 
 ![FourDiff with resolved conflict](fourdiff-imgs/readme-complex-fourdiff-resolved.png)
 
