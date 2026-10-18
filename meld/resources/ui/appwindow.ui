@@ -111,6 +111,12 @@
                   </object>
                 </child>
                 <child type="end">
+                  <object class="GtkMenuButton" id="text_filter_button">
+                    <property name="label" translatable="yes">Text Filters</property>
+                    <property name="menu-model">text-filter-menu</property>
+                  </object>
+                </child>
+                <child type="end">
                   <object class="GtkMenuButton" id="text_display_button">
                     <property name="label" translatable="yes">Display</property>
                     <property name="menu-model">text-display-menu</property>
@@ -319,10 +325,6 @@
       <attribute name="label" translatable="yes">Text wrapping</attribute>
       <attribute name="action">view.wrap-mode-bool</attribute>
     </item>
-    <submenu>
-      <attribute name="id">text-filter-submenu</attribute>
-      <attribute name="label" translatable="yes">Text Filters</attribute>
-    </submenu>
   </menu>
   <menu id="folder-status-filter-menu">
     <section>
