@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import functools
 from typing import ClassVar
 
 from gi.repository import GObject
 
+from meld.matchers.gitmatcher import GitSequenceMatcher
 from meld.matchers.myers import (
     DiffChunk,
     MyersSequenceMatcher,
@@ -94,6 +96,7 @@ class Differ(GObject.GObject):
         self._merge_cache = []
         self._line_cache = [[], [], []]
         self.ignore_blanks = False
+        self.algorithm = "meld"
         self._initialised = False
         self._has_mergeable_changes = (False, False, False, False)
 
@@ -343,7 +346,7 @@ class Differ(GObject.GObject):
         def offset(c, o1, o2):
             return DiffChunk._make((c[0], c[1] + o1, c[2] + o1, c[3] + o2, c[4] + o2))
 
-        newdiffs = self._matcher(None, lines1, linesx).get_difference_opcodes()
+        newdiffs = self._new_matcher(lines1, linesx).get_difference_opcodes()
         newdiffs = [offset(c, range1[0], rangex[0]) for c in newdiffs]
 
         if hiidx < len(self.diffs[which]):
@@ -504,6 +507,18 @@ class Differ(GObject.GObject):
             else:
                 yield from self._auto_merge(using, texts)
 
+    def _new_matcher(self, a, b, syncpoints=None):
+        chunk_matcher = self._matcher
+        if self.algorithm != "meld":
+            chunk_matcher = functools.partial(
+                GitSequenceMatcher, algorithm=self.algorithm
+            )
+        if not syncpoints:
+            return chunk_matcher(None, a, b)
+        matcher = self._sync_matcher(None, a, b, syncpoints=syncpoints)
+        matcher.chunk_matcher = chunk_matcher
+        return matcher
+
     def set_sequences_iter(self, sequences):
         assert 0 <= len(sequences) <= 3
         self.diffs = [[], []]
@@ -511,13 +526,10 @@ class Differ(GObject.GObject):
         self.seqlength = [len(s) for s in sequences]
 
         for i in range(self.num_sequences - 1):
+            syncpoints = None
             if self.syncpoints:
                 syncpoints = [(s[i][0](), s[i][1]()) for s in self.syncpoints]
-                matcher = self._sync_matcher(
-                    None, sequences[1], sequences[i * 2], syncpoints=syncpoints
-                )
-            else:
-                matcher = self._matcher(None, sequences[1], sequences[i * 2])
+            matcher = self._new_matcher(sequences[1], sequences[i * 2], syncpoints)
             work = matcher.initialise()
             while next(work) is None:
                 yield None

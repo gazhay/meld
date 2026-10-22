@@ -6,6 +6,14 @@
     <value nick="remote-merge-local" value="1"/>
   </enum>
 
+  <enum id="org.gnome.meld.diffalgorithm">
+    <value nick="meld" value="0"/>
+    <value nick="myers" value="1"/>
+    <value nick="minimal" value="2"/>
+    <value nick="patience" value="3"/>
+    <value nick="histogram" value="4"/>
+  </enum>
+
   <enum id="org.gnome.meld.overviewmapstyle">
     <value nick="chunkmap" value="0"/>
     <value nick="compact-sourcemap" value="1"/>
@@ -151,6 +159,11 @@
           <default>false</default>
           <summary>Ignore blank lines when comparing files</summary>
           <description>If true, blank lines will be trimmed when highlighting changes between files.</description>
+      </key>
+      <key name="diff-algorithm" enum="org.gnome.meld.diffalgorithm">
+          <default>"meld"</default>
+          <summary>Algorithm for matching lines between files</summary>
+          <description>Meld's own matching, or one of git's diff algorithms, which needs git to be installed.</description>
       </key>
 
 

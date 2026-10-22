@@ -373,6 +373,8 @@ class InlineMyersSequenceMatcher(MyersSequenceMatcher):
 
 
 class SyncPointMyersSequenceMatcher(MyersSequenceMatcher):
+    chunk_matcher = MyersSequenceMatcher
+
     def __init__(self, isjunk=None, a="", b="", syncpoints=None):
         super().__init__(isjunk, a, b)
         self.isjunk = isjunk
@@ -396,7 +398,7 @@ class SyncPointMyersSequenceMatcher(MyersSequenceMatcher):
             self.matching_blocks = []
             for ai, bi, a, b in chunks:
                 matching_blocks = []
-                matcher = MyersSequenceMatcher(self.isjunk, a, b)
+                matcher = self.chunk_matcher(self.isjunk, a, b)
                 for i in matcher.initialise():
                     yield None
                 blocks = matcher.get_matching_blocks()
