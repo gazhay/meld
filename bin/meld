@@ -22,6 +22,7 @@ import os
 import signal
 import subprocess
 import sys
+import traceback
 from multiprocessing import freeze_support
 
 log = logging.getLogger()
@@ -463,7 +464,10 @@ def environment_hacks():
 
 
 def ci_screenshot():
-    # For CI, support screenshot-and-exit by setting envvars
+    # For CI, support screenshot-and-exit by setting envvars.
+
+    # Note: on headless mac CI, it seems that the repeated screenshots are actually
+    # needed - otherwise the event loop stops, and on_idle() callbacks are not called.
 
     import cairo
     from gi.repository import Gio, GLib, Gtk
@@ -471,20 +475,43 @@ def ci_screenshot():
     screenshot_filename = os.environ.get("MELD_SCREENSHOT_AND_EXIT")
     if not screenshot_filename:
         return
+    log.setLevel(logging.INFO)
 
     def take_screenshot():
-        app = Gio.Application.get_default()
-        window = app.get_windows()[0]
-        alloc = window.get_allocation()
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, alloc.width, alloc.height)
-        cr = cairo.Context(surface)
-        snapshot = Gtk.Snapshot.new()
-        paintable = Gtk.WidgetPaintable.new(window)
-        paintable.snapshot(snapshot, alloc.width, alloc.height)
-        snapshot.to_node().draw(cr)
-        surface.write_to_png(screenshot_filename)
-        log.info(f"Screenshot saved to {screenshot_filename}. Exiting.")
-        sys.exit(0)
+        try:
+            app = Gio.Application.get_default()
+            window = app.get_windows()[0]
+            tasks_pending = window.scheduler.tasks_pending()
+            width = window.get_width()
+            height = window.get_height()
+            snapshot = Gtk.Snapshot.new()
+            paintable = Gtk.WidgetPaintable.new(window)
+            paintable.snapshot(snapshot, width, height)
+            node = snapshot.to_node()
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+        if tasks_pending or node is None:
+            if tasks_pending:
+                log.info(
+                    "screenshot: there are still pending tasks, scheduling another call."
+                )
+            if node is None:
+                log.info(
+                    "screenshot: snapshot.to_node() returned None, scheduling another call."
+                )
+            GLib.timeout_add(1000, take_screenshot)
+        else:
+            try:
+                surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+                cr = cairo.Context(surface)
+                node.draw(cr)
+                surface.write_to_png(screenshot_filename)
+                log.info(f"Screenshot saved to {screenshot_filename}. Exiting.")
+                sys.exit(0)
+            except Exception:
+                traceback.print_exc()
+                sys.exit(1)
 
     timeout_ms = int(os.environ.get("MELD_SCREENSHOT_TIMEOUT_MS", "3000"))
     GLib.timeout_add(timeout_ms, take_screenshot)

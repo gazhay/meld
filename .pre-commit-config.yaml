@@ -37,4 +37,4 @@ repos:
         files: ^(.*/)?(meson\.build|meson_options\.txt|meson\.options)$
         additional_dependencies: ['meson==1.8.5']
 
-exclude: ^po/.*\.po$
+exclude: ^(po/.*\.po|bundler/examples/.*)$

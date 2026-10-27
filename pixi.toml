@@ -1,0 +1,68 @@
+[workspace]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64", "osx-arm64", "osx-64"]
+preview = ["pixi-build"]
+
+[package]
+name = "meld"
+version = "3.99.0"
+
+[package.build]
+backend = { name = "pixi-build-python", version = "0.*" }
+
+[package.host-dependencies]
+meson-python = "==0.19.0"
+meson = "==1.11.1"
+uv = "*"
+gtksourceview = "*"
+libadwaita = "*"
+pygobject = "*"
+glib = "*"
+pkgconfig = "*"
+zlib = "*"
+expat = "*"
+libxml2-devel = "*"
+gettext = "*"
+harfbuzz = "*"
+
+[tasks]
+
+[dependencies]
+python = ">=3.14,<3.15"
+pycairo = ">=1.29.1,<2"
+pygobject = ">=3.58.0,<4"
+gtksourceview = ">=5.18.0,<6"
+adwaita-icon-theme = ">=50.0,<51"
+libadwaita = ">=1.9.3,<2"
+
+[target.osx-arm64.dependencies]
+# gtksourceview 5.18 has a bug on osx (missing typelib), which was fixed in a later
+# version, but that later version isn't compatible with linux, since it depends on
+# libintl. So only for mac we require a newer version.
+gtksourceview = ">=5.22.0,<6"
+
+[target.osx-64.dependencies]
+gtksourceview = ">=5.22.0,<6"
+
+[feature.build.dependencies]
+rattler-build = ">=0.74.0,<0.75"
+binutils = ">=2.44.0,<3"
+python-build = ">=1.6.0,<2"
+zstandard = ">=0.25.0,<0.26"  # python zstd support for < 3.14
+glib = ">=2.90.0,<3"
+
+[feature.test.dependencies]
+ruff = ">=0.14.0,<0.15"
+pre-commit = ">=4.3.0,<4.4"
+pytest = ">=8.4.0,<8.5"
+
+[feature.dev.dependencies]
+ipykernel = "*"
+ipywidgets = "*"
+pip = "*"  # required for vscode jupyter
+
+[environments]
+default = { solve-group = "main" }
+build = { features = ["build"], solve-group = "main" }
+test = { features = ["test", "build"], solve-group = "main" }
+dev = { features = ["dev", "test", "build"], solve-group = "main" }

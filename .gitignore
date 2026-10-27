@@ -41,3 +41,15 @@ data/mime/meld.xml
 data/org.gnome.Meld.gresource
 data/styles/meld-base.style-scheme.xml
 data/styles/meld-dark.style-scheme.xml
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+# Files created when building
+*.conda
+*.whl
+meld-linux-x86_64/
+meld-win-x86_64/
+meld-osx-x86_64/
+meld-osx-arm64/
