@@ -33,6 +33,7 @@ from meld.const import (
 )
 from meld.dirdiff import DirDiff
 from meld.filediff import FileDiff
+from meld.fourdiff import FourDiff
 from meld.imagediff import ImageDiff, files_are_images
 from meld.melddoc import ComparisonState, MeldDoc
 from meld.menuhelpers import replace_menu_section
@@ -408,6 +409,13 @@ class MeldWindow(Adw.ApplicationWindow):
         else:
             return self.append_filediff(gfiles, merge_output=merge_output, meta=meta)
 
+    def append_fourdiff(self, gfiles: Sequence[Gio.File | None]) -> FourDiff:
+        assert len(gfiles) == 4
+        doc = FourDiff()
+        self._append_page(doc)
+        doc.set_files(gfiles)
+        return doc
+
     def append_vcview(self, location, auto_compare=False) -> VcView:
         doc = VcView()
         self._append_page(doc)
@@ -426,6 +434,7 @@ class MeldWindow(Adw.ApplicationWindow):
             RecentType.File: self.append_filediff,
             RecentType.Folder: self.append_dirdiff,
             RecentType.Merge: self.append_filemerge,
+            RecentType.FourDiff: self.append_fourdiff,
             RecentType.VersionControl: self.append_vcview,
         }
         tab = comparison_method[comparison_type](gfiles)
@@ -521,6 +530,9 @@ class MeldWindow(Adw.ApplicationWindow):
             tab = self.append_diff(
                 gfiles, auto_compare=auto_compare, auto_merge=auto_merge
             )
+
+        elif len(gfiles) == 4:
+            tab = self.append_fourdiff(gfiles)
 
         if tab:
             get_recent_comparisons().add(tab)

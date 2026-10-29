@@ -249,6 +249,7 @@ class FileDiff(Gtk.Box, MeldDoc):
         num_panes,
         *,
         comparison_mode: FileComparisonMode = FileComparisonMode.Compare,
+        mark_pane1_conflict_markers: bool = False,
     ):
         Gtk.Box.__init__(self)
         # FIXME:
@@ -310,7 +311,7 @@ class FileDiff(Gtk.Box, MeldDoc):
         self._connect_buffer_handlers()
         self._sync_vscroll_lock = False
         self._sync_hscroll_lock = False
-        self.linediffer = self.differ()
+        self.linediffer = self.differ(mark_pane1_conflict_markers)
         self.force_highlight = False
         self.force_load = False
 
@@ -412,6 +413,8 @@ class FileDiff(Gtk.Box, MeldDoc):
         )
         self.toolbar_actions = builder.get_object("view-toolbar")
         self.copy_action_button = builder.get_object("copy_action_button")
+        # Allow FourDiff to access other objects in toolbar_actions
+        self.toolbar_actions_builder = builder
 
         self.create_text_filters()
 

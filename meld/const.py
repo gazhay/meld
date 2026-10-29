@@ -34,6 +34,7 @@ class RecentType(enum.Enum):
     Folder = "Folder"
     VersionControl = "Version control"
     Merge = "Merge"
+    FourDiff = "FourDiff"
 
 
 NEWLINES = {

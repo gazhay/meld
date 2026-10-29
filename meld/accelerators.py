@@ -63,6 +63,7 @@ VIEW_ACCELERATORS: dict[str, str | Sequence[str]] = {
     "view.vc-console-visible": "F9",
     # Swap the two panes
     "view.swap-2-panes": "<Alt>backslash",
+    "view.fourdiff-toggle-view": "<Primary>T",
 }
 
 

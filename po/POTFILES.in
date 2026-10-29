@@ -7,6 +7,7 @@ data/styles/meld-dark.style-scheme.xml.in
 meld/resources/data/org.gnome.Meld.metainfo.xml.in.in
 meld/resources/gtk/help-overlay.ui
 meld/resources/ui/appwindow.ui
+meld/resources/ui/close-with-conflicts-confirm-dialog.ui
 meld/resources/ui/column-list.ui
 meld/resources/ui/commit-dialog.ui
 meld/resources/ui/dirdiff-actions.ui
@@ -34,6 +35,7 @@ meld/const.py
 meld/dirdiff.py
 meld/externalhelpers.py
 meld/filediff.py
+meld/fourdiff.py
 meld/gutterrendererchunk.py
 meld/imagediff.py
 meld/iohelpers.py

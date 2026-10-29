@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwAlertDialog" id="close-with-conflicts-confirm-dialog">
+    <property name="heading" translatable="yes">Close with conflict markers?</property>
+    <property name="body" translatable="yes">There are conflict markers remaining. Are you sure you want to close?</property>
+    <property name="default-response">cancel</property>
+    <property name="close-response">cancel</property>
+    <responses>
+      <response id="cancel" translatable="yes">_Cancel</response>
+      <response id="close" translatable="yes" appearance="destructive">Close with conflict markers</response>
+    </responses>
+  </object>
+</interface>
